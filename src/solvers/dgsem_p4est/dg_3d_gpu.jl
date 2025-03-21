@@ -110,31 +110,52 @@ end
         # of the `volume_flux` to save half of the possible two-point flux
         # computations.
 
-        # x, y, z directions
-        for kk in (k + 1):num_nodes,  jj in (j + 1):num_nodes, ii in (i + 1):num_nodes
-            u_node_kk = get_svector(u, NVARS, i, j, kk, element)
-            u_node_jj = get_svector(u, NVARS, i, jj, k, element)
+        # x direction
+        for ii in (i + 1):num_nodes
             u_node_ii = get_svector(u, NVARS, ii, j, k, element)
-            
             # pull the contravariant vectors and compute the average
-            Ja3_node_kk = get_contravariant_vector(3, contravariant_vectors, i, j, kk, element)
-            Ja2_node_jj = get_contravariant_vector(2, contravariant_vectors, i, jj, k, element)
-            Ja1_node_ii = get_contravariant_vector(1, contravariant_vectors, ii, j, k, element)
-            Ja3_avg = 0.5 * (Ja3_node + Ja3_node_kk)
-            Ja2_avg = 0.5 * (Ja2_node + Ja2_node_jj)
+            Ja1_node_ii = get_contravariant_vector(1, contravariant_vectors,
+                                                   ii, j, k, element)
             Ja1_avg = 0.5 * (Ja1_node + Ja1_node_ii)
-            
+            # compute the contravariant sharp flux in the direction of the
+            # averaged contravariant vector
+            fluxtilde1 = volume_flux(u_node, u_node_ii, Ja1_avg, equations)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[i, ii], fluxtilde1,
+                                        i, j, k, element)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[ii, i], fluxtilde1,
+                                        ii, j, k, element)
+        end
+
+        # y direction
+        for jj in (j + 1):num_nodes
+            u_node_jj = get_svector(u, NVARS, i, jj, k, element)
+            # pull the contravariant vectors and compute the average
+            Ja2_node_jj = get_contravariant_vector(2, contravariant_vectors,
+                                                   i, jj, k, element)
+            Ja2_avg = 0.5 * (Ja2_node + Ja2_node_jj)
+            # compute the contravariant sharp flux in the direction of the
+            # averaged contravariant vector
+            fluxtilde2 = volume_flux(u_node, u_node_jj, Ja2_avg, equations)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[j, jj], fluxtilde2,
+                                        i, j, k, element)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[jj, j], fluxtilde2,
+                                        i, jj, k, element)
+        end
+
+        # z direction
+        for kk in (k + 1):num_nodes
+            u_node_kk = get_svector(u, NVARS, i, j, kk, element)
+            # pull the contravariant vectors and compute the average
+            Ja3_node_kk = get_contravariant_vector(3, contravariant_vectors,
+                                                   i, j, kk, element)
+            Ja3_avg = 0.5 * (Ja3_node + Ja3_node_kk)
             # compute the contravariant sharp flux in the direction of the
             # averaged contravariant vector
             fluxtilde3 = volume_flux(u_node, u_node_kk, Ja3_avg, equations)
-            multiply_add_to_first_axis!(du, alpha * derivative_split[k, kk], fluxtilde3, i, j, k, element)
-            multiply_add_to_first_axis!(du, alpha * derivative_split[kk, k], fluxtilde3, i, j, kk, element)
-            fluxtilde2 = volume_flux(u_node, u_node_jj, Ja2_avg, equations)
-            multiply_add_to_first_axis!(du, alpha * derivative_split[j, jj], fluxtilde2, i, j, k, element)
-            multiply_add_to_first_axis!(du, alpha * derivative_split[jj, j], fluxtilde2, i, jj, k, element)
-            fluxtilde1 = volume_flux(u_node, u_node_ii, Ja1_avg, equations)
-            multiply_add_to_first_axis!(du, alpha * derivative_split[i, ii], fluxtilde1, i, j, k, element)
-            multiply_add_to_first_axis!(du, alpha * derivative_split[ii, i], fluxtilde1, ii, j, k, element)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[k, kk], fluxtilde3,
+                                        i, j, k, element)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[kk, k], fluxtilde3,
+                                        i, j, kk, element)
         end
     end
 end
