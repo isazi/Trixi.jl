@@ -79,11 +79,23 @@ end
     @unpack derivative_split = dg.basis
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)
-    #kernel! = _flux_differencing_kernel!(backend)
+    kernel! = _flux_differencing_kernel!(backend)
 
-    # kernel!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
-    #         contravariant_vectors,
-    #         ndrange = nelements(dg, cache))
+    kernel!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
+            contravariant_vectors,
+            ndrange = nelements(dg, cache))
+    return nothing
+end
+
+@inline function _experiment_calc_volume_integral!(backend::Backend, du, u,
+    mesh::P4estMesh{3},
+    nonconservative_terms::False, equations,
+    volume_integral::VolumeIntegralFluxDifferencing,
+    dg::DGSEM, cache)
+    @unpack derivative_split = dg.basis
+    @unpack contravariant_vectors = cache.elements
+    nodes = eachnode(dg)
+    
     kernel! = _flux_differencing_kernel_x!(backend)
     kernel!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
             contravariant_vectors,
