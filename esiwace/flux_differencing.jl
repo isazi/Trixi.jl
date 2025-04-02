@@ -71,10 +71,10 @@ mesh, equations, solver, cache = Trixi.mesh_equations_solver_cache(ode.p)
 Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 Trixi.experiment_calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
-if du_ref .≈ du_new
-      println("Code correct.")
+if all(du_ref .≈ du_new)
+      println("The experimental version is corrrect.")
 else
-      println("Error.")
+      println("There is a bug in the experimental version.")
 end
 
 finalize(mesh)
