@@ -71,7 +71,7 @@ du_new = similar(u)
 du_new .= 0
 mesh, equations, solver, cache = Trixi.mesh_equations_solver_cache(ode.p)
 Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
-Trixi.experiment_calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+Trixi.calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 if all(du_ref .≈ du_new)
       println("The experimental version is corrrect.")
