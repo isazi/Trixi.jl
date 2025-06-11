@@ -66,9 +66,9 @@ integrator = init(ode, CarpenterKennedy2N54(williamson_condition=false),
 
 u = integrator.u
 du_ref = similar(u)
-du_ref .= 0
+du_ref .== 0
 du_new = similar(u)
-du_new .= 0
+du_new .== 0
 mesh, equations, solver, cache = Trixi.mesh_equations_solver_cache(ode.p)
 Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 Trixi.calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
