@@ -25,9 +25,9 @@ function initial_condition_taylor_green_vortex(x, t,
 end
 
 initial_condition = initial_condition_taylor_green_vortex
-
-volume_flux = flux_lax_friedrichs
-solver = DGSEM(polydeg=5, surface_flux=volume_flux,
+surface_flux = flux_lax_friedrichs
+volume_flux = flux_kennedy_gruber
+solver = DGSEM(polydeg=3, surface_flux=surface_flux,
                volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
 coordinates_min = (-1.0, -1.0, -1.0) .* pi
@@ -36,7 +36,7 @@ coordinates_max = ( 1.0,  1.0,  1.0) .* pi
 initial_refinement_level = 1
 trees_per_dimension = (4, 4, 4)
 
-mesh = P4estMesh(trees_per_dimension, polydeg=1,
+mesh = P4estMesh(trees_per_dimension, polydeg=3,
                  coordinates_min=coordinates_min, coordinates_max=coordinates_max,
                  periodicity=true, initial_refinement_level=initial_refinement_level)
 
@@ -46,7 +46,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver)
 ###############################################################################
 # ODE solvers, callbacks etc.
 
-tspan = (0.0, 1000.0)
+tspan = (0.0, 1.0)
 ode = semidiscretize(semi, tspan; adapt_to=CuArray)
 
 summary_callback = SummaryCallback()
@@ -64,12 +64,16 @@ integrator = init(ode, CarpenterKennedy2N54(williamson_condition=false),
                   dt=1.0,
                   save_everystep=false, callback=callbacks)
 
-u = integrator.u
-du_ref = similar(u)
-du_ref .== 0
-du_new = similar(u)
-du_new .== 0
+
 mesh, equations, solver, cache = Trixi.mesh_equations_solver_cache(ode.p)
+
+u_ode = integrator.u
+u = Trixi.wrap_array(u_ode, mesh, equations, solver, cache)
+du_ref = similar(u)
+du_ref .= 0
+du_new = similar(u)
+du_new .= 0
+
 Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 Trixi.calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
