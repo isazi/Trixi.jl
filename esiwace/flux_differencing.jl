@@ -73,11 +73,21 @@ du_ref = similar(u)
 du_ref .= 0
 du_new = similar(u)
 du_new .= 0
+du_exp = similar(u)
+du_exp .= 0
 
 Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 Trixi.calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 if all(du_ref .≈ du_new)
+      println("Sanity check passed.")
+else
+      println("Sanity check failed.")
+end
+
+Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+
+if all(du_ref .≈ du_exp)
       println("The experimental version is corrrect.")
 else
       println("There is a bug in the experimental version.")
