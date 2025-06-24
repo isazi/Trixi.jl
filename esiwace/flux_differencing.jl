@@ -1,3 +1,4 @@
+using BenchmarkTools
 using OrdinaryDiffEq
 using Trixi
 using CUDA
@@ -76,7 +77,7 @@ du_new .= 0
 du_exp = similar(u)
 du_exp .= 0
 
-Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+@btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 Trixi.calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 if all(du_ref .≈ du_new)
@@ -85,7 +86,7 @@ else
       println("Sanity check failed.")
 end
 
-Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+@btime Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 if all(du_ref .≈ du_exp)
       println("The experimental version is corrrect.")
