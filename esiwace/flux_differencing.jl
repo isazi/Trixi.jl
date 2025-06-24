@@ -83,7 +83,7 @@ Trixi.calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.vo
 if all(du_ref .≈ du_new)
       println("Sanity check passed.")
 else
-      println("Sanity check failed.")
+      println("[ERR] Sanity check FAILED.")
 end
 
 Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
@@ -91,7 +91,7 @@ Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations
 if all(du_ref .≈ du_exp)
       println("The experimental version is corrrect.")
 else
-      println("There is a bug in the experimental version.")
+      println("[ERR] There is a BUG in the experimental version.")
 end
 
 println("Timing referenced")
