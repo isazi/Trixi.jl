@@ -94,7 +94,7 @@ else
       println("[ERR] There is a BUG in the experimental version.")
 end
 
-println("Timing referenced")
+println("Timing reference")
 @btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 println("Timing experimental")
 @btime Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
