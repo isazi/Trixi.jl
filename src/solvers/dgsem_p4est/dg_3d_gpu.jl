@@ -184,7 +184,9 @@ end
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
     element = @index(Group, Linear)
-    i, j, k = @index(Local, NTuple)
+    i = floor(@index(Local, Linear) / (num_nodes * num_nodes))
+    j = floor((@index(Local, Linear) % (num_nodes * num_nodes)) / num_nodes)
+    k = @index(Local, Linear) % num_nodes
     NVARS = Val(nvariables(equations))
 
     # Calculate volume integral in one element
