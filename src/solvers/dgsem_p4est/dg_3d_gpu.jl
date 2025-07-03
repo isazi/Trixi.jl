@@ -173,7 +173,8 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes))
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
+            workgroupsize=(256, 4))
     return nothing
 end
 
