@@ -1,5 +1,6 @@
 # The following statements below outside the `@muladd begin ... end` block, as otherwise
 # Revise.jl might be broken
+using Atomix
 
 include("containers.jl")
 include("math.jl")
