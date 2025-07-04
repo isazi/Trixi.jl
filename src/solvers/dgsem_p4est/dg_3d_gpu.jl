@@ -174,7 +174,7 @@ end
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
             ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
-            workgroupsize=(256, 4))
+            workgroupsize=(32, 8))
     return nothing
 end
 
@@ -184,8 +184,8 @@ end
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
     element = @index(Group, Linear)
-    i = floor(@index(Local, Linear) / (num_nodes * num_nodes))
-    j = floor((@index(Local, Linear) % (num_nodes * num_nodes)) / num_nodes)
+    i = floor(Int, @index(Local, Linear) / (num_nodes * num_nodes))
+    j = floor(Int, (@index(Local, Linear) % (num_nodes * num_nodes)) / num_nodes)
     k = @index(Local, Linear) % num_nodes
     NVARS = Val(nvariables(equations))
 
