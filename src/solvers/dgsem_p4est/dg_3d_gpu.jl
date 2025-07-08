@@ -184,7 +184,7 @@ end
                                             contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    element = (@index(Group, NTuple) * 256) + @index(Local, NTuple)
+    element = (@index(Group, NTuple)[1] * 256) + @index(Local, NTuple)[1]
     NVARS = Val(nvariables(equations))
     num_nodes = length(nodes)
 
@@ -252,7 +252,7 @@ end
     end
 end
 
-@inline function _exp_ijk__calc_volume_integral!(backend::Backend, du, u,
+@inline function _exp_ijk_calc_volume_integral!(backend::Backend, du, u,
     mesh::P4estMesh{3},
     nonconservative_terms::False, equations,
     volume_integral::VolumeIntegralFluxDifferencing,
