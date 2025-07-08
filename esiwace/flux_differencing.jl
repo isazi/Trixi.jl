@@ -74,8 +74,6 @@ du_ref = similar(u)
 du_ref .= 0
 du_new = similar(u)
 du_new .= 0
-du_exp = similar(u)
-du_exp .= 0
 
 Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 Trixi.calc_volume_integral!(du_new, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
@@ -86,17 +84,31 @@ else
       println("[ERR] Sanity check FAILED.")
 end
 
-Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+du_exp = similar(u)
+du_exp .= 0
+Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 if all(du_ref .≈ du_exp)
-      println("The experimental version is corrrect.")
+      println("The exp_index version is corrrect.")
 else
-      println("[ERR] There is a BUG in the experimental version.")
+      println("[ERR] There is a BUG in the exp_index version.")
+end
+
+du_exp = similar(u)
+du_exp .= 0
+Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+
+if all(du_ref .≈ du_exp)
+      println("The exp_ijk version is corrrect.")
+else
+      println("[ERR] There is a BUG in the exp_ijk version.")
 end
 
 println("Timing reference")
 @btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
-println("Timing experimental")
-@btime Trixi.experiment_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+println("Timing exp_index")
+@btime Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+println("Timing exp_ijk")
+@btime Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 finalize(mesh)
