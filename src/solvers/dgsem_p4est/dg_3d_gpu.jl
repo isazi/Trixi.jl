@@ -261,7 +261,7 @@ end
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)
     num_nodes = length(nodes)
-    kernel! = _exp_flux_differencing_kernel!(backend)
+    kernel! = _exp_ijk_flux_differencing_kernel!(backend)
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
