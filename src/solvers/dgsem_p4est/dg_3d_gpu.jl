@@ -184,7 +184,7 @@ end
                                             contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    element = (@index(Group, Linear) * @groupsize()[1]) + @index(Local, Linear)
+    element = ((@index(Group, Linear) - 1) * @groupsize()[1]) + @index(Local, Linear)
     NVARS = Val(nvariables(equations))
     num_nodes = length(nodes)
 
