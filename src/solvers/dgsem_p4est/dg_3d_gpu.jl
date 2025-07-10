@@ -276,8 +276,8 @@ end
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
     element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
-    i = ((floor(Int, @index(Local, Linear) - 1) / (num_nodes * num_nodes))) + 1
-    j = ((floor(Int, (@index(Local, Linear) - 1) % (num_nodes * num_nodes)) / num_nodes)) + 1
+    i = (((floor(Int, @index(Local, Linear)) - 1) / (num_nodes * num_nodes))) + 1
+    j = (((floor(Int, (@index(Local, Linear))) - 1) % (num_nodes * num_nodes)) / num_nodes) + 1
     k = ((@index(Local, Linear) - 1) % num_nodes) + 1
     NVARS = Val(nvariables(equations))
 
