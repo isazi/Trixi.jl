@@ -275,7 +275,7 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    element = @index(Group, Linear)
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
     i = floor(Int, @index(Local, Linear) / (num_nodes * num_nodes))
     j = floor(Int, (@index(Local, Linear) % (num_nodes * num_nodes)) / num_nodes)
     k = @index(Local, Linear) % num_nodes
