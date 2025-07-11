@@ -276,9 +276,10 @@ end
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
     element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
-    i = floor(Int, (@index(Local, Linear) - 1) / num_nodes^2) + 1
-    j = floor(Int, ((@index(Local, Linear) - 1) % num_nodes^2) / num_nodes) + 1
-    k = ((@index(Local, Linear) - 1) % num_nodes) + 1
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
+    i = floor(Int, linear_grid / num_nodes^2) + 1
+    j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
+    k = (linear_grid % num_nodes) + 1
     NVARS = Val(nvariables(equations))
 
     # Calculate volume integral in one element
