@@ -4,6 +4,11 @@ using Trixi
 using CUDA
 CUDA.allowscalar(false)
 
+function error_statistics(reference, actual)
+      diff = reference - actual
+      println("Max error: ", maximum(diff))
+end
+
 ###############################################################################
 # semidiscretization of the compressible Euler equations
 
@@ -82,6 +87,7 @@ if all(du_ref .≈ du_new)
       println("Sanity check passed.")
 else
       println("[ERR] Sanity check FAILED.")
+      error_statistics(du_ref, du_new)
 end
 
 du_exp = similar(u)
@@ -92,6 +98,7 @@ if all(du_ref .≈ du_exp)
       println("The exp_index version is corrrect.")
 else
       println("[ERR] There is a BUG in the exp_index version.")
+      error_statistics(du_ref, du_exp)
 end
 
 du_exp = similar(u)
@@ -102,6 +109,7 @@ if all(du_ref .≈ du_exp)
       println("The exp_ijk version is corrrect.")
 else
       println("[ERR] There is a BUG in the exp_ijk version.")
+      error_statistics(du_ref, du_exp)
 end
 
 println("Timing reference")
