@@ -1,3 +1,5 @@
+
+using Statistics
 using BenchmarkTools
 using OrdinaryDiffEq
 using Trixi
@@ -5,8 +7,11 @@ using CUDA
 CUDA.allowscalar(false)
 
 function error_statistics(reference, actual)
-      diff .= reference - actual
-      println("Max error: ", maximum(diff))
+      diff = reference - actual
+      println("Min error:    ", minimum(diff))
+      println("Max error:    ", maximum(diff))
+      println("Mean error:   ", Statistics.mean(diff))
+      println("Median error: ", Statistics.median(diff))
 end
 
 ###############################################################################
