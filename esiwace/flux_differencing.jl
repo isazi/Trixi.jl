@@ -5,8 +5,8 @@ using CUDA
 CUDA.allowscalar(false)
 
 function error_statistics(reference, actual)
-      diff = reference - actual
-      println("Max error: ", maximum(max, diff))
+      diff .= reference - actual
+      println("Max error: ", maximum(diff))
 end
 
 ###############################################################################
