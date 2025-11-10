@@ -8,10 +8,10 @@ CUDA.allowscalar(false)
 
 function error_statistics(reference, actual)
       diff = reference - actual
-      println("Min error:    ", minimum(diff))
-      println("Max error:    ", maximum(diff))
-      println("Mean error:   ", Statistics.mean(diff))
-      println("Median error: ", Statistics.median(diff))
+      println("\tMin error:    ", minimum(diff))
+      println("\tMax error:    ", maximum(diff))
+      println("\tMean error:   ", Statistics.mean(diff))
+      println("\tMedian error: ", Statistics.median(diff))
 end
 
 ###############################################################################
@@ -96,6 +96,7 @@ else
 end
 
 # Testing
+println()
 du_exp = similar(u)
 du_exp .= 0
 Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
@@ -119,6 +120,7 @@ else
 end
 
 # Timing
+println()
 println("Timing reference")
 @btime begin
       Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
@@ -136,6 +138,7 @@ println("Timing exp_ijk")
 end
 
 # Tuning
+println()
 index = 1
 println("Tuning reference")
 while index * 32 <= 1024
