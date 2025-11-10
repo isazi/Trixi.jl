@@ -127,23 +127,27 @@ println("Timing exp_ijk")
 @btime Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 # Tuning
-wgs = 32
 configuration_id = 1
 println("Tuning reference")
-while wgs <= 1024
-      println("workgroupsize = ", wgs)
-      configuration_id += 1
-      @btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-      wgs *= configuration_id
+while configuration_id * 32 <= 1024
+      println("workgroupsize = ", configuration_id * 32)
+      try
+            @btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, configuration_id * 32)
+      catch
+            break
+      end
+      global configuration_id += 1
 end
 println("Tuning exp_index")
-wgs = 32
 configuration_id = 1
-while wgs <= 1024
-      println("workgroupsize = ", wgs)
-      configuration_id += 1
-      @btime Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-      wgs *= configuration_id
+while configuration_id * 32 <= 1024
+      println("workgroupsize = ", configuration_id * 32)
+      try
+            @btime Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, configuration_id * 32)
+      catch
+            break
+      end
+      global configuration_id += 1
 end
 
 finalize(mesh)
