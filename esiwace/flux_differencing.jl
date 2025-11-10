@@ -139,10 +139,11 @@ end
 
 # Tuning
 println()
-index = 1
+wgs = 0
+index_x = 1
 println("Tuning reference")
-while index * 32 <= 1024
-      wgs = index * 32
+while index_x * 32 <= 1024
+      global wgs = index_x * 32
       println("workgroupsize = ", wgs)
       try
             @btime begin
@@ -152,12 +153,13 @@ while index * 32 <= 1024
       catch
             println("[ERR] execution failure - ", wgs)
       end
-      global index += 1
+      global index_x += 1
 end
 println("Tuning exp_index")
-index = 1
-while index * 32 <= 1024
-      wgs = index * 32
+wgs = 0
+index_x = 1
+while index_x * 32 <= 1024
+      global wgs = index_x * 32
       println("workgroupsize = ", wgs)
       try
             @btime begin
@@ -167,14 +169,15 @@ while index * 32 <= 1024
       catch
             println("[ERR] execution failure - ", wgs)
       end
-      global index += 1
+      global index_x += 1
 end
 println("Tuning exp_ijk")
+wgs = (0, 0)
 index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            wgs = (index_x * 32, index_y)
+            global wgs = (index_x * 32, index_y)
             println("workgroupsize = ", wgs)
             try
                   @btime begin
