@@ -327,10 +327,10 @@ function exp_ijk_calc_volume_integral!(du, u,
                                             P4estMesh{3}, T8codeMesh{3}},
                                 nonconservative_terms, equations,
                                 volume_integral::VolumeIntegralFluxDifferencing,
-                                dg::DGSEM, cache)
+                                dg::DGSEM, cache, default_wgs = (32, 8))
     backend = backend_or_nothing(cache.elements)
     _exp_ijk_calc_volume_integral!(backend, du, u, mesh, nonconservative_terms, equations,
-                            volume_integral, dg, cache)
+                            volume_integral, dg, cache, default_wgs)
 end
 
 # /Experiments

@@ -255,7 +255,7 @@ end
                                                 mesh::P4estMesh{3},
                                                 nonconservative_terms::False, equations,
                                                 volume_integral::VolumeIntegralFluxDifferencing,
-                                                dg::DGSEM, cache)
+                                                dg::DGSEM, cache, default_wgs)
     @unpack derivative_split = dg.basis
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)
@@ -265,7 +265,7 @@ end
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
             ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
-            workgroupsize=(32, 8))
+            workgroupsize = default_wgs)
     return nothing
 end
 
