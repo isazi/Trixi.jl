@@ -120,11 +120,20 @@ end
 
 # Timing
 println("Timing reference")
-@btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+@btime begin
+      Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+      CUDA.device_synchronize()
+end
 println("Timing exp_index")
-@btime Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+@btime begin
+      Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+      CUDA.device_synchronize()
+end
 println("Timing exp_ijk")
-@btime Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+@btime begin
+      Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+      CUDA.device_synchronize()
+end
 
 # Tuning
 configuration_id = 1
@@ -132,8 +141,12 @@ println("Tuning reference")
 while configuration_id * 32 <= 1024
       println("workgroupsize = ", configuration_id * 32)
       try
-            @btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, configuration_id * 32)
+            @btime begin
+                  Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, configuration_id * 32)
+                  CUDA.device_synchronize()
+            end
       catch
+            println("[ERR] execution failure.")
             break
       end
       global configuration_id += 1
@@ -143,8 +156,12 @@ configuration_id = 1
 while configuration_id * 32 <= 1024
       println("workgroupsize = ", configuration_id * 32)
       try
-            @btime Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, configuration_id * 32)
+            @btime begin
+                  Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, configuration_id * 32)
+                  CUDA.device_synchronize()
+            end
       catch
+            println("[ERR] execution failure.")
             break
       end
       global configuration_id += 1
