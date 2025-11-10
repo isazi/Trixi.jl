@@ -74,7 +74,7 @@ end
                                         mesh::P4estMesh{3},
                                         nonconservative_terms::False, equations,
                                         volume_integral::VolumeIntegralFluxDifferencing,
-                                        dg::DGSEM, cache, default_wgs = 256)
+                                        dg::DGSEM, cache, default_wgs)
     @unpack derivative_split = dg.basis
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)
@@ -165,7 +165,7 @@ end
                                         mesh::P4estMesh{3},
                                         nonconservative_terms::False, equations,
                                         volume_integral::VolumeIntegralFluxDifferencing,
-                                        dg::DGSEM, cache, default_wgs = 256)
+                                        dg::DGSEM, cache, default_wgs)
     @unpack derivative_split = dg.basis
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)
