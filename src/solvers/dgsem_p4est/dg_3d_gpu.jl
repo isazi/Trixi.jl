@@ -8,8 +8,7 @@
 @inline function _calc_volume_integral!(backend::Backend, du, u, mesh::P4estMesh{3},
                                         nonconservative_terms::False, equations,
                                         volume_integral::VolumeIntegralWeakForm,
-                                        dg::DGSEM,
-                                        cache)
+                                        dg::DGSEM, cache, default_wgs = 256)
     nelements(dg, cache) == 0 && return nothing
     
     @unpack derivative_dhat = dg.basis
@@ -18,7 +17,7 @@
     kernel! = _weak_form_kernel!(backend)
 
     kernel!(du, u, equations, nodes, derivative_dhat, contravariant_vectors,
-            ndrange = nelements(dg, cache))
+            ndrange = nelements(dg, cache), workgroupsize = (default_wgs))
     return nothing
 end
 
@@ -75,7 +74,7 @@ end
                                         mesh::P4estMesh{3},
                                         nonconservative_terms::False, equations,
                                         volume_integral::VolumeIntegralFluxDifferencing,
-                                        dg::DGSEM, cache)
+                                        dg::DGSEM, cache, default_wgs = 256)
     @unpack derivative_split = dg.basis
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)
@@ -83,7 +82,7 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
             contravariant_vectors,
-            ndrange = nelements(dg, cache))
+            ndrange = nelements(dg, cache), workgroupsize = (default_wgs))
     return nothing
 end
 
@@ -166,7 +165,7 @@ end
                                         mesh::P4estMesh{3},
                                         nonconservative_terms::False, equations,
                                         volume_integral::VolumeIntegralFluxDifferencing,
-                                        dg::DGSEM, cache)
+                                        dg::DGSEM, cache, default_wgs = 256)
     @unpack derivative_split = dg.basis
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)
@@ -175,7 +174,7 @@ end
     kernel!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
             contravariant_vectors,
             ndrange = nelements(dg, cache),
-            workgroupsize=(256))
+            workgroupsize = (default_wgs))
     return nothing
 end
 
@@ -253,10 +252,10 @@ end
 end
 
 @inline function _exp_ijk_calc_volume_integral!(backend::Backend, du, u,
-    mesh::P4estMesh{3},
-    nonconservative_terms::False, equations,
-    volume_integral::VolumeIntegralFluxDifferencing,
-    dg::DGSEM, cache)
+                                                mesh::P4estMesh{3},
+                                                nonconservative_terms::False, equations,
+                                                volume_integral::VolumeIntegralFluxDifferencing,
+                                                dg::DGSEM, cache)
     @unpack derivative_split = dg.basis
     @unpack contravariant_vectors = cache.elements
     nodes = eachnode(dg)

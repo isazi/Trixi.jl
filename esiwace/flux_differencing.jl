@@ -95,6 +95,7 @@ else
       error_statistics(du_ref, du_new)
 end
 
+# Testing
 du_exp = similar(u)
 du_exp .= 0
 Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
@@ -117,11 +118,32 @@ else
       error_statistics(du_ref, du_exp)
 end
 
+# Timing
 println("Timing reference")
 @btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 println("Timing exp_index")
 @btime Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 println("Timing exp_ijk")
 @btime Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+
+# Tuning
+wgs = 32
+configuration_id = 1
+println("Tuning reference")
+while wgs <= 1024
+      println("workgroupsize = ", wgs)
+      configuration_id += 1
+      @btime Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
+      wgs *= configuration_id
+end
+println("Tuning exp_index")
+wgs = 32
+configuration_id = 1
+while wgs <= 1024
+      println("workgroupsize = ", wgs)
+      configuration_id += 1
+      @btime Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
+      wgs *= configuration_id
+end
 
 finalize(mesh)
