@@ -177,6 +177,11 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
+            if index_x * index_y > 1024
+                  index_x += 1
+                  index_y += 1
+                  continue
+            end
             global wgs = (index_x * 32, index_y)
             println("workgroupsize = ", wgs)
             try
