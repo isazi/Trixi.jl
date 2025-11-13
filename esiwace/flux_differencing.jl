@@ -144,14 +144,14 @@ index_x = 1
 println("Tuning reference")
 while index_x * 32 <= 1024
       global wgs = index_x * 32
-      println("workgroupsize = ", wgs)
+      println("  workgroupsize = ", wgs)
       try
             @btime begin
                   Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
                   CUDA.device_synchronize()
             end
       catch
-            println("[ERR] execution failure - ", wgs)
+            println("  [ERR] execution failure - ", wgs)
       end
       global index_x += 1
 end
@@ -160,14 +160,14 @@ wgs = 0
 index_x = 1
 while index_x * 32 <= 1024
       global wgs = index_x * 32
-      println("workgroupsize = ", wgs)
+      println("  workgroupsize = ", wgs)
       try
             @btime begin
                   Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
                   CUDA.device_synchronize()
             end
       catch
-            println("[ERR] execution failure - ", wgs)
+            println("  [ERR] execution failure - ", wgs)
       end
       global index_x += 1
 end
@@ -183,14 +183,14 @@ while index_x * 32 <= 1024
                   continue
             end
             global wgs = (index_x * 32, index_y)
-            println("workgroupsize = ", wgs)
+            println("  workgroupsize = ", wgs)
             try
                   @btime begin
                         Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
                         CUDA.device_synchronize()
                   end
             catch
-                  println("[ERR] execution failure - ", wgs)
+                  println("  [ERR] execution failure - ", wgs)
             end
             global index_y += 1
       end
