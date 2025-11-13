@@ -306,7 +306,7 @@ end
         fluxtilde1 = volume_flux(u_node, u_node_ii, Ja1_avg, equations)
         multiply_add_to_first_axis!(du, alpha * derivative_split[i, ii], fluxtilde1,
                                     i, j, k, element)
-        multiply_add_to_first_axis!(du, alpha * derivative_split[ii, i], fluxtilde1,
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[ii, i], fluxtilde1,
                                     ii, j, k, element)
     end
 
@@ -322,7 +322,7 @@ end
         fluxtilde2 = volume_flux(u_node, u_node_jj, Ja2_avg, equations)
         multiply_add_to_first_axis!(du, alpha * derivative_split[j, jj], fluxtilde2,
                                     i, j, k, element)
-        multiply_add_to_first_axis!(du, alpha * derivative_split[jj, j], fluxtilde2,
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[jj, j], fluxtilde2,
                                     i, jj, k, element)
     end
 
@@ -338,7 +338,7 @@ end
         fluxtilde3 = volume_flux(u_node, u_node_kk, Ja3_avg, equations)
         multiply_add_to_first_axis!(du, alpha * derivative_split[k, kk], fluxtilde3,
                                     i, j, k, element)
-        multiply_add_to_first_axis!(du, alpha * derivative_split[kk, k], fluxtilde3,
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[kk, k], fluxtilde3,
                                     i, j, kk, element)
     end
 end
