@@ -29,7 +29,7 @@ Device-side activity: GPU was busy for 2.44 s (73.73% of the trace)
                                                                                                                                                          1 column omitted
 ```
 
-### exp_ijk tuned code
+### exp_ijk
 
 #### workgroup = (32, 1)
 
@@ -81,4 +81,92 @@ Device-side activity: GPU was busy for 1.61 s (64.96% of the trace)
 │    0.00% │   36.24 µs │     9 │   4.03 µs ± 0.22   (  3.81 ‥ 4.53)   │ partial_mapreduce_grid(identity, _, Bool, CartesianIndices<2, Tuple<OneTo<Int64>, OneTo<Int64> ⋯
 └──────────┴────────────┴───────┴──────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────
                                                                                                                                                          1 column omitted
+```
+
+## Timing 2025-12-03
+
+### Original code
+
+```
+─────────────────────────────────────────────────────────────────────────────────
+           Trixi.jl                     Time                    Allocations
+                               ───────────────────────   ────────────────────────
+       Tot / % measured:            3.92s /  77.6%           49.0MiB /  33.2%
+
+Section                ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────────
+rhs!                       51    2.40s   79.1%  47.2ms    561KiB    3.4%  11.0KiB
+  ~rhs!~                   51    2.40s   78.9%  47.0ms   23.9KiB    0.1%     480B
+  interface flux           51   1.19ms    0.0%  23.3μs    114KiB    0.7%  2.23KiB
+  reset ∂u/∂t              51   1.16ms    0.0%  22.8μs   64.2KiB    0.4%  1.26KiB
+  prolong2interfaces       51   1.15ms    0.0%  22.5μs   97.6KiB    0.6%  1.91KiB
+  volume integral          51   1.06ms    0.0%  20.7μs   91.3KiB    0.5%  1.79KiB
+  surface integral         51   1.03ms    0.0%  20.2μs   96.0KiB    0.6%  1.88KiB
+  Jacobian                 51    999μs    0.0%  19.6μs   74.5KiB    0.4%  1.46KiB
+  boundary flux            51   21.6μs    0.0%   424ns     0.00B    0.0%    0.00B
+  prolong2boundaries       51   14.9μs    0.0%   291ns     0.00B    0.0%    0.00B
+  prolong2mortars          51   14.2μs    0.0%   278ns     0.00B    0.0%    0.00B
+  source terms             51   4.23μs    0.0%  82.9ns     0.00B    0.0%    0.00B
+  mortar flux              51   4.14μs    0.0%  81.2ns     0.00B    0.0%    0.00B
+calculate dt               11    636ms   20.9%  57.8ms   15.7MiB   96.5%  1.43MiB
+performance data            3    564μs    0.0%   188μs   16.4KiB    0.1%  5.46KiB
+─────────────────────────────────────────────────────────────────────────────────
+```
+
+### exp_ijk
+
+#### workgroup = (32, 1)
+
+```
+─────────────────────────────────────────────────────────────────────────────────
+           Trixi.jl                     Time                    Allocations
+                               ───────────────────────   ────────────────────────
+       Tot / % measured:            3.48s /  74.9%           49.0MiB /  33.4%
+
+Section                ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────────
+rhs!                       51    1.97s   75.5%  38.6ms    571KiB    3.4%  11.2KiB
+  ~rhs!~                   51    1.96s   75.2%  38.5ms   23.9KiB    0.1%     480B
+  prolong2interfaces       51   1.20ms    0.0%  23.6μs   97.6KiB    0.6%  1.91KiB
+  reset ∂u/∂t              51   1.20ms    0.0%  23.6μs   64.2KiB    0.4%  1.26KiB
+  interface flux           51   1.16ms    0.0%  22.7μs    114KiB    0.7%  2.23KiB
+  surface integral         51   1.07ms    0.0%  21.0μs   96.0KiB    0.6%  1.88KiB
+  volume integral          51   1.07ms    0.0%  20.9μs    101KiB    0.6%  1.98KiB
+  Jacobian                 51    945μs    0.0%  18.5μs   74.5KiB    0.4%  1.46KiB
+  prolong2mortars          51   24.6μs    0.0%   482ns     0.00B    0.0%    0.00B
+  prolong2boundaries       51   16.3μs    0.0%   320ns     0.00B    0.0%    0.00B
+  boundary flux            51   10.9μs    0.0%   214ns     0.00B    0.0%    0.00B
+  mortar flux              51   8.76μs    0.0%   172ns     0.00B    0.0%    0.00B
+  source terms             51   5.21μs    0.0%   102ns     0.00B    0.0%    0.00B
+calculate dt               11    640ms   24.5%  58.2ms   15.8MiB   96.5%  1.43MiB
+performance data            3    578μs    0.0%   193μs   16.4KiB    0.1%  5.46KiB
+─────────────────────────────────────────────────────────────────────────────────
+```
+
+#### workgroup = (32, 8)
+
+```
+─────────────────────────────────────────────────────────────────────────────────
+           Trixi.jl                     Time                    Allocations
+                               ───────────────────────   ────────────────────────
+       Tot / % measured:            3.15s /  72.1%           49.1MiB /  33.7%
+
+Section                ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────────
+rhs!                       51    1.58s   69.6%  31.1ms    571KiB    3.4%  11.2KiB
+  ~rhs!~                   51    1.58s   69.3%  30.9ms   23.9KiB    0.1%     480B
+  reset ∂u/∂t              51   1.21ms    0.1%  23.7μs   64.2KiB    0.4%  1.26KiB
+  prolong2interfaces       51   1.20ms    0.1%  23.6μs   97.6KiB    0.6%  1.91KiB
+  interface flux           51   1.19ms    0.1%  23.4μs    114KiB    0.7%  2.23KiB
+  surface integral         51   1.04ms    0.0%  20.4μs   96.0KiB    0.6%  1.88KiB
+  volume integral          51   1.01ms    0.0%  19.8μs    101KiB    0.6%  1.98KiB
+  Jacobian                 51    987μs    0.0%  19.4μs   74.5KiB    0.4%  1.46KiB
+  prolong2boundaries       51   13.8μs    0.0%   270ns     0.00B    0.0%    0.00B
+  boundary flux            51   10.4μs    0.0%   204ns     0.00B    0.0%    0.00B
+  prolong2mortars          51   9.66μs    0.0%   189ns     0.00B    0.0%    0.00B
+  source terms             51   8.24μs    0.0%   162ns     0.00B    0.0%    0.00B
+  mortar flux              51   4.21μs    0.0%  82.6ns     0.00B    0.0%    0.00B
+calculate dt               11    691ms   30.4%  62.8ms   16.0MiB   96.5%  1.45MiB
+performance data            3    593μs    0.0%   198μs   16.4KiB    0.1%  5.46KiB
+─────────────────────────────────────────────────────────────────────────────────
 ```
