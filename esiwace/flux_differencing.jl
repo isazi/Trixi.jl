@@ -37,7 +37,7 @@ end
 
 initial_condition = initial_condition_taylor_green_vortex
 surface_flux = flux_lax_friedrichs
-volume_flux = flux_kennedy_friedrichs
+volume_flux = flux_lax_friedrichs
 solver = DGSEM(polydeg=3, surface_flux=surface_flux,
                volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
