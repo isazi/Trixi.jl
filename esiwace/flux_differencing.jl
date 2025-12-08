@@ -126,7 +126,7 @@ Trixi.exp_ijk_nosym_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equati
 if all(du_ref .≈ du_exp)
       println("The exp_ijk_nosym version is corrrect.")
 else
-      println("[ERR] There is a BUG in the exp_ijk version.")
+      println("[ERR] There is a BUG in the exp_ijk_nosym version.")
       error_statistics(du_ref, du_exp)
 end
 

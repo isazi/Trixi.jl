@@ -343,6 +343,24 @@ end
     end
 end
 
+@inline function _exp_ijk_nosym_calc_volume_integral!(backend::Backend, du, u,
+                                                mesh::P4estMesh{3},
+                                                nonconservative_terms::False, equations,
+                                                volume_integral::VolumeIntegralFluxDifferencing,
+                                                dg::DGSEM, cache, default_wgs)
+    @unpack derivative_split = dg.basis
+    @unpack contravariant_vectors = cache.elements
+    nodes = eachnode(dg)
+    num_nodes = length(nodes)
+    kernel! = _exp_ijk_nosym_flux_differencing_kernel!(backend)
+
+    kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
+            contravariant_vectors,
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
+            workgroupsize = default_wgs)
+    return nothing
+end
+
 @kernel function _exp_ijk_nosym_flux_differencing_kernel!(du, u, equations,
                                                 volume_flux, num_nodes, derivative_split,
                                                 contravariant_vectors, alpha = true)
