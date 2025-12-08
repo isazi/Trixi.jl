@@ -37,7 +37,7 @@ end
 
 initial_condition = initial_condition_taylor_green_vortex
 surface_flux = flux_lax_friedrichs
-volume_flux = flux_kennedy_gruber
+volume_flux = flux_kennedy_friedrichs
 solver = DGSEM(polydeg=3, surface_flux=surface_flux,
                volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
@@ -47,7 +47,7 @@ coordinates_max = ( 1.0,  1.0,  1.0) .* pi
 initial_refinement_level = 1
 trees_per_dimension = (4, 4, 4)
 
-mesh = P4estMesh(trees_per_dimension, polydeg=3,
+mesh = P4estMesh(trees_per_dimension, polydeg=1,
                  coordinates_min=coordinates_min, coordinates_max=coordinates_max,
                  periodicity=true, initial_refinement_level=initial_refinement_level)
 
@@ -57,7 +57,7 @@ semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver)
 ###############################################################################
 # ODE solvers, callbacks etc.
 
-tspan = (0.0, 1.0)
+tspan = (0.0, 1000.0)
 ode = semidiscretize(semi, tspan; adapt_to=CuArray)
 
 summary_callback = SummaryCallback()
@@ -71,9 +71,11 @@ callbacks = CallbackSet(summary_callback,
 ###############################################################################
 # run the simulation
 
+maxiters = 200
+
 integrator = init(ode, CarpenterKennedy2N54(williamson_condition=false),
                   dt=1.0,
-                  save_everystep=false, callback=callbacks)
+                  save_everystep=false, callback=callbacks, maxiters=maxiters, verbose=false)
 solve!(integrator)
 
 mesh, equations, solver, cache = Trixi.mesh_equations_solver_cache(ode.p)
