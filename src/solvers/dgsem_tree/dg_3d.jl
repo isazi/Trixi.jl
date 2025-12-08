@@ -333,6 +333,17 @@ function exp_ijk_calc_volume_integral!(du, u,
                             volume_integral, dg, cache, default_wgs)
 end
 
+function exp_ijk_nosym_calc_volume_integral!(du, u,
+                                mesh::Union{TreeMesh{3}, StructuredMesh{3},
+                                            P4estMesh{3}, T8codeMesh{3}},
+                                nonconservative_terms, equations,
+                                volume_integral::VolumeIntegralFluxDifferencing,
+                                dg::DGSEM, cache, default_wgs = (32, 1))
+    backend = backend_or_nothing(cache.elements)
+    _exp_ijk_nosym_calc_volume_integral!(backend, du, u, mesh, nonconservative_terms, equations,
+                            volume_integral, dg, cache, default_wgs)
+end
+
 # /Experiments
 
 @inline function _calc_volume_integral!(backend::Nothing, du, u,
