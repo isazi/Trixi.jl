@@ -141,6 +141,17 @@ else
       error_statistics(du_ref, du_exp)
 end
 
+du_exp = similar(u)
+du_exp .= 0
+Trixi.exp_ijk_nosym_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+
+if all(du_ref .≈ du_exp)
+      println("The exp_ijk_nosym_split version is corrrect.")
+else
+      println("[ERR] There is a BUG in the exp_ijk_nosym_split version.")
+      error_statistics(du_ref, du_exp)
+end
+
 # Tuning
 println()
 best_time = Inf
@@ -268,6 +279,38 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_nosym_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
+                        CUDA.device_synchronize()
+                  end
+                  if res.time < best_time
+                        global best_time = res.time
+                        global best_wgs = wgs
+                  end
+                  global index_y += 1
+            catch
+                  global index_y += 1
+            end
+      end
+      global index_x += 1
+      global index_y = 1
+end
+println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("Tuning exp_ijk_nosym_split")
+best_time = Inf
+wgs = (0, 0)
+best_wgs = wgs
+index_x = 1
+index_y = 1
+while index_x * 32 <= 1024
+      while index_y <= 32
+            if index_x * index_y > 1024
+                  global index_x += 1
+                  global index_y = 1
+                  continue
+            end
+            global wgs = (index_x * 32, index_y)
+            try
+                  res = @btimed begin
+                        Trixi.exp_ijk_nosym_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
                         CUDA.device_synchronize()
                   end
                   if res.time < best_time
