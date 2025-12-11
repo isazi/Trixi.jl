@@ -134,6 +134,17 @@ end
 
 du_exp = similar(u)
 du_exp .= 0
+Trixi.exp_ijk_fusedloop_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+
+if all(du_ref .≈ du_exp)
+      println("The exp_ijk_fusedloop version is corrrect.")
+else
+      println("[ERR] There is a BUG in the exp_ijk_fusedloop version.")
+      error_statistics(du_ref, du_exp)
+end
+
+du_exp = similar(u)
+du_exp .= 0
 Trixi.exp_ijk_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 if all(du_ref .≈ du_exp)
@@ -200,6 +211,7 @@ while index_x * 32 <= 1024
       end
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_split")
 best_time = Inf
 wgs = 0
@@ -222,6 +234,7 @@ while index_x * 32 <= 1024
       end
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_index")
 best_time = Inf
 wgs = 0
@@ -244,6 +257,7 @@ while index_x * 32 <= 1024
       end
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_ijk")
 best_time = Inf
 wgs = (0, 0)
@@ -276,6 +290,7 @@ while index_x * 32 <= 1024
       global index_y = 1
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_ijk_fusedloop")
 best_time = Inf
 wgs = (0, 0)
@@ -308,6 +323,7 @@ while index_x * 32 <= 1024
       global index_y = 1
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_ijk_split")
 best_time = Inf
 wgs = (0, 0)
@@ -340,6 +356,7 @@ while index_x * 32 <= 1024
       global index_y = 1
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_ijk_nosym")
 best_time = Inf
 wgs = (0, 0)
@@ -372,6 +389,7 @@ while index_x * 32 <= 1024
       global index_y = 1
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_ijk_nosym_split")
 best_time = Inf
 wgs = (0, 0)
@@ -404,6 +422,7 @@ while index_x * 32 <= 1024
       global index_y = 1
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_ijk_nosym_fusedloop")
 best_time = Inf
 wgs = (0, 0)
@@ -436,6 +455,7 @@ while index_x * 32 <= 1024
       global index_y = 1
 end
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
 println("Tuning exp_ijk_nosym_fusedloop_inter")
 best_time = Inf
 wgs = (0, 0)
