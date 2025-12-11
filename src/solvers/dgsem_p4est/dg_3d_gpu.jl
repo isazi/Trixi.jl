@@ -161,6 +161,147 @@ end
 
 # Experiments
 
+@inline function _exp_split_calc_volume_integral!(backend::Backend, du, u,
+                                        mesh::P4estMesh{3},
+                                        nonconservative_terms::False, equations,
+                                        volume_integral::VolumeIntegralFluxDifferencing,
+                                        dg::DGSEM, cache, default_wgs)
+    @unpack derivative_split = dg.basis
+    @unpack contravariant_vectors = cache.elements
+    nodes = eachnode(dg)
+    kernel_x! = _exp_x_flux_differencing_kernel!(backend)
+    kernel_y! = _exp_y_flux_differencing_kernel!(backend)
+    kernel_z! = _exp_z_flux_differencing_kernel!(backend)
+
+    kernel_x!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
+            contravariant_vectors,
+            ndrange = nelements(dg, cache), workgroupsize = (default_wgs))
+    kernel_y!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
+            contravariant_vectors,
+            ndrange = nelements(dg, cache), workgroupsize = (default_wgs))
+    kernel_z!(du, u, equations, volume_integral.volume_flux, nodes, derivative_split,
+            contravariant_vectors,
+            ndrange = nelements(dg, cache), workgroupsize = (default_wgs))
+    return nothing
+end
+
+@kernel function _exp_x_flux_differencing_kernel!(du, u, equations,
+                                            volume_flux, nodes, derivative_split,
+                                            contravariant_vectors, alpha = true)
+    # true * [some floating point value] == [exactly the same floating point value]
+    # This can (hopefully) be optimized away due to constant propagation.
+    element = @index(Global, Linear)
+    NVARS = Val(nvariables(equations))
+    num_nodes = length(nodes)
+
+    # Calculate volume integral in one element
+    for k in nodes, j in nodes, i in nodes
+        u_node = get_svector(u, NVARS, i, j, k, element)
+
+        # pull the contravariant vectors in each coordinate direction
+        Ja1_node = get_contravariant_vector(1, contravariant_vectors, i, j, k, element)
+
+        # All diagonal entries of `derivative_split` are zero. Thus, we can skip
+        # the computation of the diagonal terms. In addition, we use the symmetry
+        # of the `volume_flux` to save half of the possible two-point flux
+        # computations.
+
+        # x direction
+        for ii in (i + 1):num_nodes
+            u_node_ii = get_svector(u, NVARS, ii, j, k, element)
+            # pull the contravariant vectors and compute the average
+            Ja1_node_ii = get_contravariant_vector(1, contravariant_vectors,
+                                                   ii, j, k, element)
+            Ja1_avg = 0.5 * (Ja1_node + Ja1_node_ii)
+            # compute the contravariant sharp flux in the direction of the
+            # averaged contravariant vector
+            fluxtilde1 = volume_flux(u_node, u_node_ii, Ja1_avg, equations)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[i, ii], fluxtilde1,
+                                        i, j, k, element)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[ii, i], fluxtilde1,
+                                        ii, j, k, element)
+        end
+    end
+end
+
+@kernel function _exp_y_flux_differencing_kernel!(du, u, equations,
+                                            volume_flux, nodes, derivative_split,
+                                            contravariant_vectors, alpha = true)
+    # true * [some floating point value] == [exactly the same floating point value]
+    # This can (hopefully) be optimized away due to constant propagation.
+    element = @index(Global, Linear)
+    NVARS = Val(nvariables(equations))
+    num_nodes = length(nodes)
+
+    # Calculate volume integral in one element
+    for k in nodes, j in nodes, i in nodes
+        u_node = get_svector(u, NVARS, i, j, k, element)
+
+        # pull the contravariant vectors in each coordinate direction
+        Ja2_node = get_contravariant_vector(2, contravariant_vectors, i, j, k, element)
+
+        # All diagonal entries of `derivative_split` are zero. Thus, we can skip
+        # the computation of the diagonal terms. In addition, we use the symmetry
+        # of the `volume_flux` to save half of the possible two-point flux
+        # computations.
+
+        # y direction
+        for jj in (j + 1):num_nodes
+            u_node_jj = get_svector(u, NVARS, i, jj, k, element)
+            # pull the contravariant vectors and compute the average
+            Ja2_node_jj = get_contravariant_vector(2, contravariant_vectors,
+                                                   i, jj, k, element)
+            Ja2_avg = 0.5 * (Ja2_node + Ja2_node_jj)
+            # compute the contravariant sharp flux in the direction of the
+            # averaged contravariant vector
+            fluxtilde2 = volume_flux(u_node, u_node_jj, Ja2_avg, equations)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[j, jj], fluxtilde2,
+                                        i, j, k, element)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[jj, j], fluxtilde2,
+                                        i, jj, k, element)
+        end
+    end
+end
+
+@kernel function _exp_z_flux_differencing_kernel!(du, u, equations,
+                                            volume_flux, nodes, derivative_split,
+                                            contravariant_vectors, alpha = true)
+    # true * [some floating point value] == [exactly the same floating point value]
+    # This can (hopefully) be optimized away due to constant propagation.
+    element = @index(Global, Linear)
+    NVARS = Val(nvariables(equations))
+    num_nodes = length(nodes)
+
+    # Calculate volume integral in one element
+    for k in nodes, j in nodes, i in nodes
+        u_node = get_svector(u, NVARS, i, j, k, element)
+
+        # pull the contravariant vectors in each coordinate direction
+        Ja3_node = get_contravariant_vector(3, contravariant_vectors, i, j, k, element)
+
+        # All diagonal entries of `derivative_split` are zero. Thus, we can skip
+        # the computation of the diagonal terms. In addition, we use the symmetry
+        # of the `volume_flux` to save half of the possible two-point flux
+        # computations.
+
+        # z direction
+        for kk in (k + 1):num_nodes
+            u_node_kk = get_svector(u, NVARS, i, j, kk, element)
+            # pull the contravariant vectors and compute the average
+            Ja3_node_kk = get_contravariant_vector(3, contravariant_vectors,
+                                                   i, j, kk, element)
+            Ja3_avg = 0.5 * (Ja3_node + Ja3_node_kk)
+            # compute the contravariant sharp flux in the direction of the
+            # averaged contravariant vector
+            fluxtilde3 = volume_flux(u_node, u_node_kk, Ja3_avg, equations)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[k, kk], fluxtilde3,
+                                        i, j, k, element)
+            multiply_add_to_first_axis!(du, alpha * derivative_split[kk, k], fluxtilde3,
+                                        i, j, kk, element)
+        end
+    end
+end
+
 @inline function _exp_index_calc_volume_integral!(backend::Backend, du, u,
                                         mesh::P4estMesh{3},
                                         nonconservative_terms::False, equations,
