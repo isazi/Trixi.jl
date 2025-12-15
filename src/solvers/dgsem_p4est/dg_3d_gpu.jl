@@ -1,3 +1,6 @@
+
+using KernelAbstractions.Extras: @unroll
+
 # By default, Julia/LLVM does not use fused multiply-add operations (FMAs).
 # Since these FMAs can increase the performance of many numerical algorithms,
 # we need to opt-in explicitly.
@@ -527,7 +530,7 @@ end
     # of the `volume_flux` to save half of the possible two-point flux
     # computations.
 
-    for other in min(i, j, k):num_nodes
+    @unroll for other in min(i, j, k):num_nodes
         if other > i
             u_node_ii = get_svector(u, NVARS, other, j, k, element)
             # pull the contravariant vectors and compute the average
@@ -993,7 +996,7 @@ end
     # Here, instead, we naively loop over all indices to avoid conflicting memory access
 
     # x, y, z directions
-    for other in 1:num_nodes
+    @unroll for other in 1:num_nodes
         u_node_ii = get_svector(u, NVARS, other, j, k, element)
         u_node_jj = get_svector(u, NVARS, i, other, k, element)
         u_node_kk = get_svector(u, NVARS, i, j, other, element)
@@ -1065,7 +1068,7 @@ end
     # Here, instead, we naively loop over all indices to avoid conflicting memory access
 
     # x, y, z directions
-    for other in 1:num_nodes
+    @unroll for other in 1:num_nodes
         u_node_other = get_svector(u, NVARS, other, j, k, element)
         Ja_node_other = get_contravariant_vector(1, contravariant_vectors,
                                                 other, j, k, element)
