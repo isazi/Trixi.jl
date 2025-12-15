@@ -26,9 +26,9 @@ end
 
 initial_condition = initial_condition_taylor_green_vortex
 
-#volume_flux = flux_ranocha
-volume_flux = flux_lax_friedrichs
-solver = DGSEM(polydeg=5, surface_flux=volume_flux,
+surface_flux = flux_lax_friedrichs
+volume_flux = flux_kennedy_gruber
+solver = DGSEM(polydeg=5, surface_flux=surface_flux,
                volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
 
 coordinates_min = (-1.0, -1.0, -1.0) .* pi
