@@ -1,6 +1,6 @@
 [CUDA_Runtime_jll]
 local = "true"
-version = "12.3"
+version = "12.6"
 
 [HDF5]
 libhdf5 = "/opt/ohpc/pub/libs/gnu9/hdf5/1.10.8/lib/libhdf5.so"
@@ -28,3 +28,6 @@ libsc = "/home/alessio/.local/lib/libsc.so"
 libp4est = "/home/alessio/.local/lib/libp4est.so"
 libsc = "/home/alessio/.local/lib/libsc.so"
 libt8 = "/home/alessio/.local/lib/libt8.so"
+
+[Trixi] 
+log = "log_Base"
