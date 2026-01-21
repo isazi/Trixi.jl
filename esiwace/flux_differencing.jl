@@ -189,11 +189,12 @@ end
 
 # Tuning
 println()
+println("Tuning reference")
+reference_time = Inf
 best_time = Inf
 wgs = 0
 best_wgs = wgs
 index_x = 1
-println("Tuning reference")
 while index_x * 32 <= 1024
       global wgs = index_x * 32
       try
@@ -210,6 +211,7 @@ while index_x * 32 <= 1024
             global index_x += 1
       end
 end
+reference_time = best_time
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_split")
@@ -233,7 +235,7 @@ while index_x * 32 <= 1024
             global index_x += 1
       end
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_index")
 best_time = Inf
@@ -256,7 +258,7 @@ while index_x * 32 <= 1024
             global index_x += 1
       end
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_ijk")
 best_time = Inf
@@ -289,7 +291,7 @@ while index_x * 32 <= 1024
       global index_x += 1
       global index_y = 1
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_ijk_fusedloop")
 best_time = Inf
@@ -322,7 +324,7 @@ while index_x * 32 <= 1024
       global index_x += 1
       global index_y = 1
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_ijk_split")
 best_time = Inf
@@ -355,7 +357,7 @@ while index_x * 32 <= 1024
       global index_x += 1
       global index_y = 1
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_ijk_nosym")
 best_time = Inf
@@ -388,7 +390,7 @@ while index_x * 32 <= 1024
       global index_x += 1
       global index_y = 1
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_ijk_nosym_split")
 best_time = Inf
@@ -421,7 +423,7 @@ while index_x * 32 <= 1024
       global index_x += 1
       global index_y = 1
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_ijk_nosym_fusedloop")
 best_time = Inf
@@ -454,7 +456,7 @@ while index_x * 32 <= 1024
       global index_x += 1
       global index_y = 1
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 println("Tuning exp_ijk_nosym_fusedloop_inter")
 best_time = Inf
@@ -487,6 +489,6 @@ while index_x * 32 <= 1024
       global index_x += 1
       global index_y = 1
 end
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+println("\tBest time: ", best_time, " s -- speedup: ", best_time / reference_time, " -- workgroupsize: ", best_wgs)
 
 finalize(mesh)
