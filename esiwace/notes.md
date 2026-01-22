@@ -1,6 +1,116 @@
 
 # Notes on performance
 
+## Tuning 2026-01-22
+
+### Summary tables
+
+#### Execution time (ms)
+
+| **variant** | **A4000** | **A100** | **H100** |
+| ----------- | --------- | -------- | -------- |
+| reference | 8.86 | 6.15 | 3.98 |
+| split | 8.5 | 6.27 | 3.88 |
+| index | 8.9 | 6.3 | 4.0 |
+| ijk | 1.06 | 0.19 | 0.17 |
+| ijk_fusedloop | 1.03 | 0.19 | **0.17** |
+| ijk_split | 1.42 | 0.25 | 0.2 |
+| ijk_nosym | 1.95 | 0.55 | 0.2 |
+| ijk_nosym_split | 2.26 | 0.63 | 0.23 |
+| ijk_nosym_fusedloop | 1.89 | 0.55 | 0.2 |
+| ijk_nosym_fusedloop_inter | 1.92 | 0.54 | 0.19 |
+
+#### Speedup
+
+| **variant** | **A4000** | **A100** | **H100** |
+| ----------- | --------- | -------- | -------- |
+| split | 1.04 | 0.98 | 1.02 |
+| index | 0.99 | 0.97 | 0.99 |
+| ijk | 8.35 | 31.27 | 23.17 |
+| ijk_fusedloop | 8.59 | **31.53** | 23.42 |
+| ijk_split | 6.22 | 23.86 | 19.82 |
+| ijk_nosym | 4.52 | 11.10 | 19.50 |
+| ijk_nosym_split | 3.92 | 9.65 | 17.29 |
+| ijk_nosym_fusedloop | 4.68 | 11.02 | 19.54 |
+| ijk_nosym_fusedloop_inter | 4.61 | 11.28 | 20.09 |
+
+### Raw data
+
+#### A4000 (DAS6-VU)
+
+```
+Tuning reference
+        Best time: 0.008864381 s -- workgroupsize: 32
+Tuning exp_split
+        Best time: 0.008503194 s -- speedup: 1.0424766270180357 -- workgroupsize: 32
+Tuning exp_index
+        Best time: 0.008904896 s -- speedup: 0.995450255679572 -- workgroupsize: 32
+Tuning exp_ijk
+        Best time: 0.001060705 s -- speedup: 8.357065348046818 -- workgroupsize: (32, 3)
+Tuning exp_ijk_fusedloop
+        Best time: 0.00103095 s -- speedup: 8.598264707308791 -- workgroupsize: (32, 3)
+Tuning exp_ijk_split
+        Best time: 0.001423275 s -- speedup: 6.228157594280795 -- workgroupsize: (32, 9)
+Tuning exp_ijk_nosym
+        Best time: 0.001958846 s -- speedup: 4.525307757730826 -- workgroupsize: (32, 8)
+Tuning exp_ijk_nosym_split
+        Best time: 0.002260932 s -- speedup: 3.9206756328805996 -- workgroupsize: (32, 9)
+Tuning exp_ijk_nosym_fusedloop
+        Best time: 0.001892081 s -- speedup: 4.68499023033369 -- workgroupsize: (32, 4)
+Tuning exp_ijk_nosym_fusedloop_inter
+        Best time: 0.001922008 s -- speedup: 4.61204167724588 -- workgroupsize: (32, 2)
+```
+
+#### A100 (snellius)
+
+```
+Tuning reference
+	Best time: 0.006151405 s -- workgroupsize: 96
+Tuning exp_split
+	Best time: 0.006276812 s -- speedup: 0.980020590070246 -- workgroupsize: 32
+Tuning exp_index
+	Best time: 0.006309166 s -- speedup: 0.9749949517891906 -- workgroupsize: 32
+Tuning exp_ijk
+	Best time: 0.000196716 s -- speedup: 31.27048638646577 -- workgroupsize: (32, 2)
+Tuning exp_ijk_fusedloop
+	Best time: 0.000195079 s -- speedup: 31.532891802808095 -- workgroupsize: (32, 2)
+Tuning exp_ijk_split
+	Best time: 0.000257741 s -- speedup: 23.866614159175295 -- workgroupsize: (32, 6)
+Tuning exp_ijk_nosym
+	Best time: 0.000553694 s -- speedup: 11.109755568960473 -- workgroupsize: (32, 8)
+Tuning exp_ijk_nosym_split
+	Best time: 0.00063689 s -- speedup: 9.65850460833111 -- workgroupsize: (32, 11)
+Tuning exp_ijk_nosym_fusedloop
+	Best time: 0.000558099 s -- speedup: 11.022067769338415 -- workgroupsize: (32, 8)
+Tuning exp_ijk_nosym_fusedloop_inter
+	Best time: 0.000545078 s -- speedup: 11.285366498005791 -- workgroupsize: (32, 8)
+```
+
+#### H100 (snellius)
+
+```
+Tuning reference
+	Best time: 0.003984991 s -- workgroupsize: 32
+Tuning exp_split
+	Best time: 0.003885372 s -- speedup: 1.0256395011854722 -- workgroupsize: 32
+Tuning exp_index
+	Best time: 0.004002771 s -- speedup: 0.99555807714206 -- workgroupsize: 32
+Tuning exp_ijk
+	Best time: 0.000171939 s -- speedup: 23.176771994719058 -- workgroupsize: (128, 1)
+Tuning exp_ijk_fusedloop
+	Best time: 0.000170088 s -- speedup: 23.428995578759235 -- workgroupsize: (128, 1)
+Tuning exp_ijk_split
+	Best time: 0.000201039 s -- speedup: 19.821979814861795 -- workgroupsize: (128, 1)
+Tuning exp_ijk_nosym
+	Best time: 0.000204278 s -- speedup: 19.507685604910954 -- workgroupsize: (32, 7)
+Tuning exp_ijk_nosym_split
+	Best time: 0.000230439 s -- speedup: 17.2930406745386 -- workgroupsize: (32, 9)
+Tuning exp_ijk_nosym_fusedloop
+	Best time: 0.000203899 s -- speedup: 19.543945777075905 -- workgroupsize: (32, 7)
+Tuning exp_ijk_nosym_fusedloop_inter
+	Best time: 0.000198338 s -- speedup: 20.091918845606994 -- workgroupsize: (32, 7)
+  ```
+
 ## Profiling 2025-12-03
 
 ### Original code
