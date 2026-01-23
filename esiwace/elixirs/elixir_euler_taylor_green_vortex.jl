@@ -34,7 +34,7 @@ solver = DGSEM(polydeg=5, surface_flux=surface_flux,
 coordinates_min = (-1.0, -1.0, -1.0) .* pi
 coordinates_max = ( 1.0,  1.0,  1.0) .* pi
 
-initial_refinement_level = 1
+initial_refinement_level = 3
 trees_per_dimension = (4, 4, 4)
 
 mesh = P4estMesh(trees_per_dimension, polydeg=1,

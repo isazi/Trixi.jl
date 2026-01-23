@@ -15,7 +15,7 @@ function main(elixir_path)
     print("Rank $rank has device $(gpu) with ID $(CUDA.uuid(gpu)), has CUDA: $(MPI.has_cuda())\n")
 
     # setup
-    maxiters = 10
+    maxiters = 200
     initial_refinement_level = 3
     run_profiler = true
 

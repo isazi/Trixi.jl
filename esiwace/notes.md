@@ -1,6 +1,68 @@
 
 # Notes on performance
 
+## Timing 2026-01-23
+
+### reference - H100 (snellius)
+
+```
+26.18% │   740.3 ms │    50 │  14.81 ms ± 0.03   ( 14.78 ‥ 14.98)  │ gpu__flux_differencing_kernel_
+
+─────────────────────────────────────────────────────────────────────────────────
+           Trixi.jl                     Time                    Allocations
+                               ───────────────────────   ────────────────────────
+       Tot / % measured:            3.46s /  74.7%           47.7MiB /  34.6%
+
+Section                ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────────
+rhs!                       51    1.90s   73.7%  37.3ms    579KiB    3.4%  11.3KiB
+  ~rhs!~                   51    1.90s   73.5%  37.2ms   23.9KiB    0.1%     480B
+  volume integral          51   1.33ms    0.1%  26.2μs    109KiB    0.6%  2.13KiB
+  prolong2interfaces       51   1.21ms    0.0%  23.8μs   97.6KiB    0.6%  1.91KiB
+  interface flux           51   1.17ms    0.0%  23.0μs    114KiB    0.7%  2.23KiB
+  reset ∂u/∂t              51   1.05ms    0.0%  20.7μs   64.2KiB    0.4%  1.26KiB
+  surface integral         51   1.00ms    0.0%  19.7μs   96.0KiB    0.6%  1.88KiB
+  Jacobian                 51    990μs    0.0%  19.4μs   74.5KiB    0.4%  1.46KiB
+  prolong2boundaries       51   38.0μs    0.0%   746ns     0.00B    0.0%    0.00B
+  boundary flux            51   27.6μs    0.0%   541ns     0.00B    0.0%    0.00B
+  prolong2mortars          51   20.4μs    0.0%   400ns     0.00B    0.0%    0.00B
+  source terms             51   7.11μs    0.0%   139ns     0.00B    0.0%    0.00B
+  mortar flux              51   6.62μs    0.0%   130ns     0.00B    0.0%    0.00B
+calculate dt               11    678ms   26.3%  61.6ms   15.9MiB   96.5%  1.45MiB
+performance data            3    651μs    0.0%   217μs   16.1KiB    0.1%  5.37KiB
+─────────────────────────────────────────────────────────────────────────────────
+```
+
+### ijk_fusedloop - H100 (snellius)
+
+```
+32.99% │     1.11 s │    50 │  22.23 ms ± 0.03   ( 22.21 ‥ 22.4)   │ gpu__exp_ijk_fusedloop_flux_differencing_kernel_
+
+─────────────────────────────────────────────────────────────────────────────────
+           Trixi.jl                     Time                    Allocations
+                               ───────────────────────   ────────────────────────
+       Tot / % measured:            3.81s /  77.7%           47.7MiB /  34.6%
+
+Section                ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────────
+rhs!                       51    2.28s   77.2%  44.8ms    591KiB    3.5%  11.6KiB
+  ~rhs!~                   51    2.28s   77.0%  44.7ms   23.9KiB    0.1%     480B
+  volume integral          51   1.54ms    0.1%  30.3μs    121KiB    0.7%  2.37KiB
+  prolong2interfaces       51   1.32ms    0.0%  25.8μs   97.6KiB    0.6%  1.91KiB
+  interface flux           51   1.19ms    0.0%  23.3μs    114KiB    0.7%  2.23KiB
+  reset ∂u/∂t              51   1.14ms    0.0%  22.4μs   64.2KiB    0.4%  1.26KiB
+  surface integral         51   1.08ms    0.0%  21.2μs   96.0KiB    0.6%  1.88KiB
+  Jacobian                 51    989μs    0.0%  19.4μs   74.5KiB    0.4%  1.46KiB
+  prolong2boundaries       51   35.7μs    0.0%   700ns     0.00B    0.0%    0.00B
+  boundary flux            51   31.9μs    0.0%   626ns     0.00B    0.0%    0.00B
+  prolong2mortars          51   24.7μs    0.0%   484ns     0.00B    0.0%    0.00B
+  source terms             51   8.98μs    0.0%   176ns     0.00B    0.0%    0.00B
+  mortar flux              51   6.45μs    0.0%   126ns     0.00B    0.0%    0.00B
+calculate dt               11    674ms   22.8%  61.3ms   15.9MiB   96.4%  1.44MiB
+performance data            3    628μs    0.0%   209μs   16.1KiB    0.1%  5.37KiB
+─────────────────────────────────────────────────────────────────────────────────
+```
+
 ## Tuning 2026-01-22
 
 ### Summary tables
