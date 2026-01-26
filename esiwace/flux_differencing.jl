@@ -1,6 +1,7 @@
 
 using Statistics
 using BenchmarkTools
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 1000
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 30
 using OrdinaryDiffEq
 using Trixi
