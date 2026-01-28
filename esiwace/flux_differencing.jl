@@ -9,7 +9,7 @@ using CUDA
 CUDA.allowscalar(false)
 
 function error_statistics(reference, actual)
-      diff = reference - actual
+      diff = abs(reference - actual)
       println("\tMin error:    ", minimum(diff))
       println("\tMax error:    ", maximum(diff))
       println("\tMean error:   ", Statistics.mean(diff))
