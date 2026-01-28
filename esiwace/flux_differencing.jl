@@ -9,7 +9,7 @@ using CUDA
 CUDA.allowscalar(false)
 
 function error_statistics(reference, actual)
-      diff = abs(reference - actual)
+      diff = abs.(reference - actual)
       println("\tMin error:    ", minimum(diff))
       println("\tMax error:    ", maximum(diff))
       println("\tMean error:   ", Statistics.mean(diff))
@@ -103,23 +103,23 @@ end
 println()
 du_exp = similar(u)
 du_exp .= 0
-Trixi.exp_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
-
-if all(du_ref .≈ du_exp)
-      println("The exp_split version is corrrect.")
-else
-      println("[ERR] There is a BUG in the exp_split version.")
-      error_statistics(du_ref, du_exp)
-end
-
-du_exp = similar(u)
-du_exp .= 0
 Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
 
 if all(du_ref .≈ du_exp)
       println("The exp_index version is corrrect.")
 else
       println("[ERR] There is a BUG in the exp_index version.")
+      error_statistics(du_ref, du_exp)
+end
+
+du_exp = similar(u)
+du_exp .= 0
+Trixi.exp_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache)
+
+if all(du_ref .≈ du_exp)
+      println("The exp_split version is corrrect.")
+else
+      println("[ERR] There is a BUG in the exp_split version.")
       error_statistics(du_ref, du_exp)
 end
 
@@ -216,7 +216,7 @@ end
 reference_time = best_time
 println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
 
-println("Tuning exp_split")
+println("Tuning exp_index")
 best_time = Inf
 wgs = 0
 best_wgs = wgs
@@ -225,7 +225,7 @@ while index_x * 32 <= 1024
       global wgs = index_x * 32
       try
             res = @btimed begin
-                  Trixi.exp_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
+                  Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
                   CUDA.device_synchronize()
             end
             if res.time < best_time
@@ -239,7 +239,7 @@ while index_x * 32 <= 1024
 end
 println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
 
-println("Tuning exp_index")
+println("Tuning exp_split")
 best_time = Inf
 wgs = 0
 best_wgs = wgs
@@ -248,7 +248,7 @@ while index_x * 32 <= 1024
       global wgs = index_x * 32
       try
             res = @btimed begin
-                  Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
+                  Trixi.exp_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
                   CUDA.device_synchronize()
             end
             if res.time < best_time
