@@ -1,13 +1,96 @@
 
 # Notes on performance
 
+## Profiling 2026-01-28
+
+Using the tuned values from earlier today.
+
+### reference - A100 (snellius)
+
+```
+Device-side activity: GPU was busy for 39.6 s (63.79% of the trace)
+┌──────────┬────────────┬───────┬──────────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ Time (%) │ Total time │ Calls │ Time distribution                    │ Name                                                                                                              ⋯
+├──────────┼────────────┼───────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│   39.71% │    24.65 s │  1000 │  24.65 ms ± 0.27   ( 24.54 ‥ 30.55)  │ gpu__flux_differencing_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo< ⋯
+│   10.02% │     6.22 s │  1000 │   6.22 ms ± 0.02   (  6.18 ‥ 6.31)   │ gpu_surface_integral_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<In ⋯
+│    5.72% │     3.55 s │  1000 │   3.55 ms ± 0.03   (   3.5 ‥ 3.91)   │ gpu_prolong2interfaces_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo< ⋯
+│    2.73% │     1.69 s │  1000 │   1.69 ms ± 0.01   (  1.68 ‥ 1.91)   │ gpu_interface_flux_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int6 ⋯
+│    2.28% │     1.41 s │  1000 │   1.41 ms ± 0.02   (  1.41 ‥ 1.81)   │ gpu__apply_jacobian_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int ⋯
+│    1.80% │     1.12 s │  1800 │ 622.31 µs ± 2.02   (612.26 ‥ 628.23) │ gpu_broadcast_kernel_linear(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int ⋯
+│    0.66% │   412.5 ms │  1000 │  412.5 µs ± 1.48   (409.84 ‥ 417.95) │ gpu_broadcast_kernel_linear(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int ⋯
+│    0.36% │  221.81 ms │   200 │   1.11 ms ± 0.0    (   1.1 ‥ 1.16)   │ gpu_max_scaled_speed_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<In ⋯
+│    0.30% │  183.92 ms │  1000 │ 183.92 µs ± 2.74   (177.86 ‥ 188.59) │ gpu_fill_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int64>>>, NDRa ⋯
+│    0.13% │   79.51 ms │   201 │ 395.58 µs ± 1.46   (393.15 ‥ 409.13) │ [copy device to device memory]                                                                                    ⋯
+│    0.08% │   46.92 ms │   199 │  235.8 µs ± 1.9    (231.27 ‥ 241.28) │ partial_mapreduce_grid(INFINITE_OR_GIANT, _, Bool, CartesianIndices<1, Tuple<OneTo<Int64>>>, CartesianIndices<1,  ⋯
+│    0.00% │  987.05 µs │   200 │   4.94 µs ± 0.18   (  4.53 ‥ 5.72)   │ partial_mapreduce_grid(identity, max, Float64, CartesianIndices<1, Tuple<OneTo<Int64>>>, CartesianIndices<1, Tupl ⋯
+│    0.00% │  861.88 µs │   199 │   4.33 µs ± 0.18   (  4.05 ‥ 4.77)   │ partial_mapreduce_grid(identity, _, Bool, CartesianIndices<2, Tuple<OneTo<Int64>, OneTo<Int64>>>, CartesianIndice ⋯
+│    0.00% │  851.39 µs │   200 │   4.26 µs ± 0.18   (  4.05 ‥ 4.77)   │ partial_mapreduce_grid(identity, max, Float64, CartesianIndices<2, Tuple<OneTo<Int64>, OneTo<Int64>>>, CartesianI ⋯
+│    0.00% │   696.9 µs │   399 │   1.75 µs ± 0.16   (  1.43 ‥ 2.38)   │ [copy device to pageable memory]                                                                                  ⋯
+└──────────┴────────────┴───────┴──────────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+```
+
+### ijk_fusedloop - A100 (snellius)
+
+```
+Device-side activity: GPU was busy for 31.23 s (55.08% of the trace)
+┌──────────┬────────────┬───────┬──────────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│ Time (%) │ Total time │ Calls │ Time distribution                    │ Name                                                                                                              ⋯
+├──────────┼────────────┼───────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│   28.68% │    16.26 s │  1000 │  16.26 ms ± 0.08   ( 16.24 ‥ 17.52)  │ gpu__exp_ijk_fusedloop_flux_differencing_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndic ⋯
+│   10.98% │     6.22 s │  1000 │   6.22 ms ± 0.02   (  6.18 ‥ 6.32)   │ gpu_surface_integral_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<In ⋯
+│    6.29% │     3.57 s │  1000 │   3.57 ms ± 0.04   (  3.51 ‥ 3.93)   │ gpu_prolong2interfaces_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo< ⋯
+│    2.99% │     1.69 s │  1000 │   1.69 ms ± 0.02   (  1.67 ‥ 1.92)   │ gpu_interface_flux_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int6 ⋯
+│    2.49% │     1.41 s │  1000 │   1.41 ms ± 0.03   (   1.4 ‥ 1.81)   │ gpu__apply_jacobian_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int ⋯
+│    1.98% │     1.12 s │  1800 │ 622.26 µs ± 2.05   (611.78 ‥ 629.43) │ gpu_broadcast_kernel_linear(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int ⋯
+│    0.73% │   412.5 ms │  1000 │  412.5 µs ± 1.46   (409.84 ‥ 416.76) │ gpu_broadcast_kernel_linear(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int ⋯
+│    0.39% │   221.9 ms │   200 │   1.11 ms ± 0.01   (   1.1 ‥ 1.24)   │ gpu_max_scaled_speed_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<In ⋯
+│    0.32% │  183.92 ms │  1000 │ 183.92 µs ± 2.75   (177.86 ‥ 187.64) │ gpu_fill_kernel_(CompilerMetadata<DynamicSize, DynamicCheck, void, CartesianIndices<1, Tuple<OneTo<Int64>>>, NDRa ⋯
+│    0.14% │    79.5 ms │   201 │ 395.53 µs ± 1.52   (392.91 ‥ 409.84) │ [copy device to device memory]                                                                                    ⋯
+│    0.08% │   46.92 ms │   199 │ 235.78 µs ± 1.72   ( 231.5 ‥ 240.33) │ partial_mapreduce_grid(INFINITE_OR_GIANT, _, Bool, CartesianIndices<1, Tuple<OneTo<Int64>>>, CartesianIndices<1,  ⋯
+│    0.00% │  982.52 µs │   200 │   4.91 µs ± 0.19   (  4.53 ‥ 5.96)   │ partial_mapreduce_grid(identity, max, Float64, CartesianIndices<1, Tuple<OneTo<Int64>>>, CartesianIndices<1, Tupl ⋯
+│    0.00% │  864.98 µs │   199 │   4.35 µs ± 0.17   (  3.81 ‥ 4.77)   │ partial_mapreduce_grid(identity, _, Bool, CartesianIndices<2, Tuple<OneTo<Int64>, OneTo<Int64>>>, CartesianIndice ⋯
+│    0.00% │  852.11 µs │   200 │   4.26 µs ± 0.18   (  4.05 ‥ 5.25)   │ partial_mapreduce_grid(identity, max, Float64, CartesianIndices<2, Tuple<OneTo<Int64>, OneTo<Int64>>>, CartesianI ⋯
+│    0.00% │  707.63 µs │   399 │   1.77 µs ± 0.17   (  1.43 ‥ 2.38)   │ [copy device to pageable memory]                                                                                  ⋯
+└──────────┴────────────┴───────┴──────────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+```
+
+## Tuning 2026-01-28
+
+Using **Julia 1.12** today (and until further notice).
+
+### Raw data
+
+#### A100 (snellius)
+
+```
+Tuning reference
+        Best time: 0.033542788 s -- workgroupsize: 160
+Tuning exp_split
+        Best time: 0.032114261 s -- speedup: 1.0444826365458013 -- workgroupsize: 160
+Tuning exp_index
+        Best time: 0.033648544 s -- speedup: 0.9968570408276802 -- workgroupsize: 160
+Tuning exp_ijk
+        Best time: 0.016501226 s -- speedup: 2.032745203295803 -- workgroupsize: (32, 8)
+Tuning exp_ijk_fusedloop
+        Best time: 0.016364023 s -- speedup: 2.049788612494617 -- workgroupsize: (32, 8)
+Tuning exp_ijk_split
+        Best time: 0.030022688 s -- speedup: 1.117247995915622 -- workgroupsize: (32, 12)
+Tuning exp_ijk_nosym
+        Best time: 0.03002459 s -- speedup: 1.1171772204050079 -- workgroupsize: (32, 8)
+Tuning exp_ijk_nosym_split
+        Best time: 0.036404205 s -- speedup: 0.9213987230321331 -- workgroupsize: (32, 12)
+Tuning exp_ijk_nosym_fusedloop
+        Best time: 0.027793449 s -- speedup: 1.2068595013162993 -- workgroupsize: (32, 8)
+Tuning exp_ijk_nosym_fusedloop_inter
+        Best time: 0.029036533 s -- speedup: 1.1551925982347824 -- workgroupsize: (32, 8)
+```
+
 ## Timing 2026-01-23
 
 ### reference - H100 (snellius)
 
 ```
-26.18% │   740.3 ms │    50 │  14.81 ms ± 0.03   ( 14.78 ‥ 14.98)  │ gpu__flux_differencing_kernel_
-
 ─────────────────────────────────────────────────────────────────────────────────
            Trixi.jl                     Time                    Allocations
                                ───────────────────────   ────────────────────────
@@ -36,8 +119,6 @@ performance data            3    651μs    0.0%   217μs   16.1KiB    0.1%  5.37
 ### ijk_fusedloop - H100 (snellius)
 
 ```
-32.99% │     1.11 s │    50 │  22.23 ms ± 0.03   ( 22.21 ‥ 22.4)   │ gpu__exp_ijk_fusedloop_flux_differencing_kernel_
-
 ─────────────────────────────────────────────────────────────────────────────────
            Trixi.jl                     Time                    Allocations
                                ───────────────────────   ────────────────────────
