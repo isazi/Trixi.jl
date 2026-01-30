@@ -202,7 +202,7 @@ while index_x * 32 <= 1024
       try
             res = @btimed begin
                   Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                  KernelAbstractions.synchronize()
+                  CUDA.synchronize()
             end
             if res.time < best_time
                   global best_time = res.time
@@ -226,7 +226,7 @@ while index_x * 32 <= 1024
       try
             res = @btimed begin
                   Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                  KernelAbstractions.synchronize()
+                  CUDA.synchronize()
             end
             if res.time < best_time
                   global best_time = res.time
@@ -249,7 +249,7 @@ while index_x * 32 <= 1024
       try
             res = @btimed begin
                   Trixi.exp_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                  KernelAbstractions.synchronize()
+                  CUDA.synchronize()
             end
             if res.time < best_time
                   global best_time = res.time
@@ -279,7 +279,7 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        KernelAbstractions.synchronize()
+                        CUDA.synchronize()
                   end
                   if res.time < best_time
                         global best_time = res.time
@@ -312,7 +312,7 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_fusedloop_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        KernelAbstractions.synchronize()
+                        CUDA.synchronize()
                   end
                   if res.time < best_time
                         global best_time = res.time
@@ -345,7 +345,7 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        KernelAbstractions.synchronize()
+                        CUDA.synchronize()
                   end
                   if res.time < best_time
                         global best_time = res.time
@@ -378,7 +378,7 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_nosym_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        KernelAbstractions.synchronize()
+                        CUDA.synchronize()
                   end
                   if res.time < best_time
                         global best_time = res.time
@@ -411,7 +411,7 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_nosym_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        KernelAbstractions.synchronize()
+                        CUDA.synchronize()
                   end
                   if res.time < best_time
                         global best_time = res.time
@@ -444,7 +444,7 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_nosym_fusedloop_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        KernelAbstractions.synchronize()
+                        CUDA.synchronize()
                   end
                   if res.time < best_time
                         global best_time = res.time
@@ -477,7 +477,7 @@ while index_x * 32 <= 1024
             try
                   res = @btimed begin
                         Trixi.exp_ijk_nosym_fusedloop_inter_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        KernelAbstractions.synchronize()
+                        CUDA.synchronize()
                   end
                   if res.time < best_time
                         global best_time = res.time
