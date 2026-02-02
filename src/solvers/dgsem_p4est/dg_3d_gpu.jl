@@ -576,6 +576,113 @@ end
     end
 end
 
+@inline function _exp_ijk_incloop_calc_volume_integral!(backend::Backend, du, u,
+                                                mesh::P4estMesh{3},
+                                                nonconservative_terms::False, equations,
+                                                volume_integral::VolumeIntegralFluxDifferencing,
+                                                dg::DGSEM, cache, default_wgs)
+    @unpack derivative_split = dg.basis
+    @unpack contravariant_vectors = cache.elements
+    nodes = eachnode(dg)
+    num_nodes = length(nodes)
+    kernel! = _exp_ijk_incloop_flux_differencing_kernel!(backend)
+
+    kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
+            contravariant_vectors,
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
+            workgroupsize = default_wgs)
+    return nothing
+end
+
+@inline function apply_flux_action!(dim, u, du, NVARS, equations, volume_flux,
+                                    derivative_split, 
+                                    contravariant_vectors, i, j, k, other, element, alpha, 
+                                    u_node, Ja1_node, Ja2_node, Ja3_node)    
+    if dim == 1
+        u_node_ii   = get_svector(u, NVARS, other, j, k, element)
+        Ja1_node_ii = get_contravariant_vector(1, contravariant_vectors, other, j, k, element)
+        Ja1_avg     = 0.5 * (Ja1_node + Ja1_node_ii)
+        fluxtilde1  = volume_flux(u_node, u_node_ii, Ja1_avg, equations)
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[i, other], fluxtilde1, i, j, k, element)
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[other, i], fluxtilde1, other, j, k, element)
+    elseif dim == 2
+        u_node_jj   = get_svector(u, NVARS, i, other, k, element)
+        Ja2_node_jj = get_contravariant_vector(2, contravariant_vectors, i, other, k, element)
+        Ja2_avg     = 0.5 * (Ja2_node + Ja2_node_jj)
+        fluxtilde2  = volume_flux(u_node, u_node_jj, Ja2_avg, equations)
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[j, other], fluxtilde2, i, j, k, element)
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[other, j], fluxtilde2, i, other, k, element)
+    else
+        u_node_kk   = get_svector(u, NVARS, i, j, other, element)
+        Ja3_node_kk = get_contravariant_vector(3, contravariant_vectors, i, j, other, element)
+        Ja3_avg     = 0.5 * (Ja3_node + Ja3_node_kk)
+        fluxtilde3  = volume_flux(u_node, u_node_kk, Ja3_avg, equations)        
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[k, other], fluxtilde3, i, j, k, element)
+        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[other, k], fluxtilde3, i, j, other, element)
+    end
+end
+
+@kernel function _exp_ijk_incloop_flux_differencing_kernel!(du, u, equations,
+                                                volume_flux, num_nodes, derivative_split,
+                                                contravariant_vectors, alpha = true)
+    # true * [some floating point value] == [exactly the same floating point value]
+    # This can (hopefully) be optimized away due to constant propagation.
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
+    i = floor(Int, linear_grid / num_nodes^2) + 1
+    j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
+    k = (linear_grid % num_nodes) + 1
+    NVARS = Val(nvariables(equations))
+
+    # Calculate volume integral in one element
+    u_node = get_svector(u, NVARS, i, j, k, element)
+
+    # pull the contravariant vectors in each coordinate direction
+    Ja1_node = get_contravariant_vector(1, contravariant_vectors, i, j, k, element)
+    Ja2_node = get_contravariant_vector(2, contravariant_vectors, i, j, k, element)
+    Ja3_node = get_contravariant_vector(3, contravariant_vectors, i, j, k, element)
+
+    # All diagonal entries of `derivative_split` are zero. Thus, we can skip
+    # the computation of the diagonal terms. In addition, we use the symmetry
+    # of the `volume_flux` to save half of the possible two-point flux
+    # computations.
+
+    # Sorting the loops
+    v1, id1 = i, 1
+    v2, id2 = j, 2
+    v3, id3 = k, 3
+
+    if v1 > v2; v1, v2 = v2, v1; id1, id2 = id2, id1; end
+    if v2 > v3; v2, v3 = v3, v2; id2, id3 = id3, id2; end
+    if v1 > v2; v1, v2 = v2, v1; id1, id2 = id2, id1; end
+
+    # Executing the loops
+    @unroll for other in (v1 + 1) : v2
+        apply_flux_action!(id1, u, du, NVARS, equations, volume_flux, derivative_split, 
+                           contravariant_vectors, 
+                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+    end
+    @unroll for other in (v2 + 1) : v3
+        apply_flux_action!(id1, u, du, NVARS, equations, volume_flux, derivative_split, 
+                           contravariant_vectors, 
+                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+        apply_flux_action!(id2, u, du, NVARS, equations, volume_flux, derivative_split, 
+                           contravariant_vectors, 
+                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+    end
+    @unroll for other in (v3 + 1) : num_nodes
+        apply_flux_action!(1, u, du, NVARS, equations, volume_flux, derivative_split, 
+                           contravariant_vectors, 
+                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+        apply_flux_action!(2, u, du, NVARS, equations, volume_flux, derivative_split, 
+                           contravariant_vectors, 
+                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+        apply_flux_action!(3, u, du, NVARS, equations, volume_flux, derivative_split, 
+                           contravariant_vectors, 
+                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+    end
+end
+
 @inline function _exp_ijk_split_calc_volume_integral!(backend::Backend, du, u,
                                                 mesh::P4estMesh{3},
                                                 nonconservative_terms::False, equations,
