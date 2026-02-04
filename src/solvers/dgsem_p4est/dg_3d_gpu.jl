@@ -594,32 +594,33 @@ end
     return nothing
 end
 
-@inline function apply_flux_action!(dim, u, du, NVARS, equations, volume_flux,
-                                    derivative_split, 
-                                    contravariant_vectors, i, j, k, other, element, alpha, 
-                                    u_node, Ja1_node, Ja2_node, Ja3_node)    
-    if dim == 1
-        u_node_ii   = get_svector(u, NVARS, other, j, k, element)
-        Ja1_node_ii = get_contravariant_vector(1, contravariant_vectors, other, j, k, element)
-        Ja1_avg     = 0.5 * (Ja1_node + Ja1_node_ii)
-        fluxtilde1  = volume_flux(u_node, u_node_ii, Ja1_avg, equations)
-        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[i, other], fluxtilde1, i, j, k, element)
-        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[other, i], fluxtilde1, other, j, k, element)
-    elseif dim == 2
-        u_node_jj   = get_svector(u, NVARS, i, other, k, element)
-        Ja2_node_jj = get_contravariant_vector(2, contravariant_vectors, i, other, k, element)
-        Ja2_avg     = 0.5 * (Ja2_node + Ja2_node_jj)
-        fluxtilde2  = volume_flux(u_node, u_node_jj, Ja2_avg, equations)
-        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[j, other], fluxtilde2, i, j, k, element)
-        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[other, j], fluxtilde2, i, other, k, element)
-    else
-        u_node_kk   = get_svector(u, NVARS, i, j, other, element)
-        Ja3_node_kk = get_contravariant_vector(3, contravariant_vectors, i, j, other, element)
-        Ja3_avg     = 0.5 * (Ja3_node + Ja3_node_kk)
-        fluxtilde3  = volume_flux(u_node, u_node_kk, Ja3_avg, equations)        
-        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[k, other], fluxtilde3, i, j, k, element)
-        multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[other, k], fluxtilde3, i, j, other, element)
-    end
+macro apply_flux_action(dim, other)
+    return esc(quote
+        if $dim == 1
+            u_node_ii   = get_svector(u, NVARS, $other, j, k, element)
+            Ja1_node_ii = get_contravariant_vector(1, contravariant_vectors, $other, j, k, element)
+            Ja1_avg     = 0.5 * (Ja1_node + Ja1_node_ii)
+            fluxtilde1  = volume_flux(u_node, u_node_ii, Ja1_avg, equations)
+            multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[i, $other], fluxtilde1, i, j, k, element)
+            multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[$other, i], fluxtilde1, $other, j, k, element)
+
+        elseif $dim == 2
+            u_node_jj   = get_svector(u, NVARS, i, $other, k, element)
+            Ja2_node_jj = get_contravariant_vector(2, contravariant_vectors, i, $other, k, element)
+            Ja2_avg     = 0.5 * (Ja2_node + Ja2_node_jj)
+            fluxtilde2  = volume_flux(u_node, u_node_jj, Ja2_avg, equations)
+            multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[j, $other], fluxtilde2, i, j, k, element)
+            multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[$other, j], fluxtilde2, i, $other, k, element)
+
+        else # $dim == 3
+            u_node_kk   = get_svector(u, NVARS, i, j, $other, element)
+            Ja3_node_kk = get_contravariant_vector(3, contravariant_vectors, i, j, $other, element)
+            Ja3_avg     = 0.5 * (Ja3_node + Ja3_node_kk)
+            fluxtilde3  = volume_flux(u_node, u_node_kk, Ja3_avg, equations)
+            multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[k, $other], fluxtilde3, i, j, k, element)
+            multiply_add_to_first_axis_atomic!(du, alpha * derivative_split[$other, k], fluxtilde3, i, j, $other, element)
+        end
+    end)
 end
 
 @kernel function _exp_ijk_incloop_flux_differencing_kernel!(du, u, equations,
@@ -657,29 +658,17 @@ end
     if v1 > v2; v1, v2 = v2, v1; id1, id2 = id2, id1; end
 
     # Executing the loops
-    @unroll for other in (v1 + 1) : v2
-        apply_flux_action!(id1, u, du, NVARS, equations, volume_flux, derivative_split, 
-                           contravariant_vectors, 
-                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+    for other in (v1 + 1) : v2
+        @apply_flux_action(id1, other)
     end
-    @unroll for other in (v2 + 1) : v3
-        apply_flux_action!(id1, u, du, NVARS, equations, volume_flux, derivative_split, 
-                           contravariant_vectors, 
-                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
-        apply_flux_action!(id2, u, du, NVARS, equations, volume_flux, derivative_split, 
-                           contravariant_vectors, 
-                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+    for other in (v2 + 1) : v3
+        @apply_flux_action(id1, other)
+        @apply_flux_action(id2, other)
     end
-    @unroll for other in (v3 + 1) : num_nodes
-        apply_flux_action!(1, u, du, NVARS, equations, volume_flux, derivative_split, 
-                           contravariant_vectors, 
-                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
-        apply_flux_action!(2, u, du, NVARS, equations, volume_flux, derivative_split, 
-                           contravariant_vectors, 
-                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
-        apply_flux_action!(3, u, du, NVARS, equations, volume_flux, derivative_split, 
-                           contravariant_vectors, 
-                           i, j, k, other, element, alpha, u_node, Ja1_node, Ja2_node, Ja3_node)
+    for other in (v3 + 1) : num_nodes
+        @apply_flux_action(id1, other)
+        @apply_flux_action(id2, other)
+        @apply_flux_action(id3, other)
     end
 end
 
