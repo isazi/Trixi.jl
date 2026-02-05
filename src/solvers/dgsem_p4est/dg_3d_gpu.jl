@@ -1545,7 +1545,7 @@ end
                                          mesh::P4estMesh{3},
                                          equations,
                                          surface_integral::SurfaceIntegralWeakForm,
-                                         dg::DGSEM, cache)
+                                         dg::DGSEM, cache, default_wgs)
     @unpack boundary_interpolation = dg.basis
     @unpack surface_flux_values = cache.elements
     nodes = eachnode(dg)
@@ -1558,7 +1558,7 @@ end
     kernel! = surface_integral_kernel!(backend)
 
     kernel!(du, u, Val(nvariables(equations)), factor_1, factor_2, nodes,
-            surface_flux_values, ndrange = nelements(cache.elements))
+            surface_flux_values, ndrange = nelements(cache.elements), workgroupsize = default_wgs)
     return nothing
 end
 
@@ -1604,6 +1604,71 @@ end
         end
     end
 end
+
+# Experiments
+
+@inline function _exp_parnodes_calc_surface_integral!(backend::Backend, du, u,
+                                         mesh::P4estMesh{3},
+                                         equations,
+                                         surface_integral::SurfaceIntegralWeakForm,
+                                         dg::DGSEM, cache, default_wgs)
+    @unpack boundary_interpolation = dg.basis
+    @unpack surface_flux_values = cache.elements
+    num_elements = nelements(cache.elements)
+    num_nodes = length(eachnode(dg))
+    # Note that all fluxes have been computed with outward-pointing normal vectors.
+    # Access the factors only once before beginning the loop to increase performance.
+    # We also use explicit assignments instead of `+=` to let `@muladd` turn these
+    # into FMAs (see comment at the top of the file).
+    factor_1 = boundary_interpolation[1, 1]
+    factor_2 = boundary_interpolation[nnodes(dg), 2]
+    kernel! = exp_parnodes_surface_integral_kernel!(backend)
+
+    kernel!(du, u, Val(nvariables(equations)), factor_1, factor_2, 
+            num_nodes, surface_flux_values, 
+            ndrange = (num_nodes, num_nodes, num_elements), workgroupsize = default_wgs)
+    return nothing
+end
+
+@kernel function exp_parnodes_surface_integral_kernel!(du, @Const(u), ::Val{NVARS},
+                                          boundary_interp_factor_1, boundary_interp_factor_2,
+                                          num_nodes, @Const(surface_flux_values)) where {NVARS}
+    l, m, element = @index(Global, NTuple)
+
+    @unroll for v in 1:NVARS
+        # surface at -x
+        du[v, 1, l, m, element] = (du[v, 1, l, m, element] +
+                                    surface_flux_values[v, l, m, 1, element] *
+                                    boundary_interp_factor_1)
+
+        # surface at +x
+        du[v, num_nodes, l, m, element] = (du[v, num_nodes, l, m, element] +
+                                            surface_flux_values[v, l, m, 2, element] *
+                                            boundary_interp_factor_2)
+
+        # surface at -y
+        du[v, l, 1, m, element] = (du[v, l, 1, m, element] +
+                                    surface_flux_values[v, l, m, 3, element] *
+                                    boundary_interp_factor_1)
+
+        # surface at +y
+        du[v, l, num_nodes, m, element] = (du[v, l, num_nodes, m, element] +
+                                            surface_flux_values[v, l, m, 4, element] *
+                                            boundary_interp_factor_2)
+
+        # surface at -z
+        du[v, l, m, 1, element] = (du[v, l, m, 1, element] +
+                                    surface_flux_values[v, l, m, 5, element] *
+                                    boundary_interp_factor_1)
+
+        # surface at +z
+        du[v, l, m, num_nodes, element] = (du[v, l, m, num_nodes, element] +
+                                            surface_flux_values[v, l, m, 6, element] *
+                                            boundary_interp_factor_2)
+    end
+end
+
+# /Experiments
 
 @inline function _apply_jacobian!(backend::Backend, du, mesh::P4estMesh{3},
                                   equations, dg::DG, cache)

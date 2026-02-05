@@ -1,0 +1,187 @@
+
+using Statistics
+using BenchmarkTools
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 100
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 10
+using OrdinaryDiffEq
+using Trixi
+using CUDA
+CUDA.allowscalar(false)
+
+function error_statistics(reference, actual)
+      diff = abs.(reference - actual)
+      println("\tMin error:    ", minimum(diff))
+      println("\tMax error:    ", maximum(diff))
+      println("\tMean error:   ", Statistics.mean(diff))
+      println("\tMedian error: ", Statistics.median(diff))
+end
+
+###############################################################################
+# semidiscretization of the compressible Euler equations
+
+equations = CompressibleEulerEquations3D(1.4)
+
+function initial_condition_taylor_green_vortex(x, t,
+                                               equations::CompressibleEulerEquations3D)
+    A  = 1.0 # magnitude of speed
+    Ms = 0.1 # maximum Mach number
+
+    rho = 1.0
+    v1  =  A * sin(x[1]) * cos(x[2]) * cos(x[3])
+    v2  = -A * cos(x[1]) * sin(x[2]) * cos(x[3])
+    v3  = 0.0
+    p   = (A / Ms)^2 * rho / equations.gamma # scaling to get Ms
+    p   = p + 1.0/16.0 * A^2 * rho * (cos(2*x[1])*cos(2*x[3]) +
+          2*cos(2*x[2]) + 2*cos(2*x[1]) + cos(2*x[2])*cos(2*x[3]))
+
+    return prim2cons(SVector(rho, v1, v2, v3, p), equations)
+end
+
+initial_condition = initial_condition_taylor_green_vortex
+surface_flux = flux_lax_friedrichs
+volume_flux = flux_ranocha
+solver = DGSEM(polydeg=5, surface_flux=surface_flux,
+               volume_integral=VolumeIntegralFluxDifferencing(volume_flux))
+
+               coordinates_min = (-1.0, -1.0, -1.0) .* pi
+coordinates_max = ( 1.0,  1.0,  1.0) .* pi
+
+initial_refinement_level = 3
+trees_per_dimension = (4, 4, 4)
+
+mesh = P4estMesh(trees_per_dimension, polydeg=1,
+                 coordinates_min=coordinates_min, coordinates_max=coordinates_max,
+                 periodicity=true, initial_refinement_level=initial_refinement_level)
+
+semi = SemidiscretizationHyperbolic(mesh, equations, initial_condition, solver)
+
+
+###############################################################################
+# ODE solvers, callbacks etc.
+
+tspan = (0.0, 1000.0)
+ode = semidiscretize(semi, tspan; adapt_to=CuArray)
+
+summary_callback = SummaryCallback()
+
+stepsize_callback = StepsizeCallback(cfl=0.1)
+
+callbacks = CallbackSet(summary_callback,
+                        stepsize_callback)
+
+
+###############################################################################
+# run the simulation
+
+maxiters = 200
+
+integrator = init(ode, CarpenterKennedy2N54(williamson_condition=false),
+                  dt=1.0,
+                  save_everystep=false, callback=callbacks, maxiters=maxiters, verbose=false)
+solve!(integrator)
+
+mesh, equations, solver, cache = Trixi.mesh_equations_solver_cache(ode.p)
+
+u_ode = integrator.u
+u = Trixi.wrap_array(u_ode, mesh, equations, solver, cache)
+du_ref = similar(u)
+du_ref .= 0
+du_new = similar(u)
+du_new .= 0
+
+Trixi.calc_surface_integral(du_ref, u, mesh, equations, solver.surface_integral, solver, cache)
+Trixi.calc_surface_integral(du_new, u, mesh, equations, solver.surface_integral, solver, cache)
+
+if all(du_ref .≈ du_new)
+      println("Sanity check passed.")
+else
+      println("[ERR] Sanity check FAILED.")
+      error_statistics(du_ref, du_new)
+end
+
+# Testing
+println()
+du_exp = similar(u)
+du_exp .= 0
+Trixi.exp_parnodes_calc_surface_integral!(du_exp, u, mesh, equations, solver.surface_integral, solver, cache)
+
+if all(du_ref .≈ du_exp)
+      println("The exp_parnodes version is corrrect.")
+else
+      println("[ERR] There is a BUG in the exp_parnodes version.")
+      error_statistics(du_ref, du_exp)
+end
+
+# Tuning
+println()
+println("Tuning reference")
+reference_time = Inf
+best_time = Inf
+wgs = 0
+best_wgs = wgs
+dim_0 = 1
+while dim_0 * 32 <= 1024
+      global wgs = dim_0 * 32
+      try
+            res = @btimed begin
+                  Trixi.calc_surface_integral(du_ref, u, mesh, equations, solver.surface_integral, solver, cache, wgs)
+                  CUDA.synchronize()
+            end
+            if res.time < best_time
+                  global best_time = res.time
+                  global best_wgs = wgs
+            end
+            global dim_0 += 1
+      catch
+            global dim_0 += 1
+      end
+end
+reference_time = best_time
+println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
+
+println("Tuning exp_parnodes")
+best_time = Inf
+wgs = (0, 0, 0)
+best_wgs = wgs
+dim_0 = 1
+dim_1 = 1
+dim_2 = 1
+while dim_0 * 32 <= 1024
+    while dim_1 <= 32
+        if (dim_0 * 32 * dim_1) > 1024
+            global dim_0 += 1
+            global dim_1 = 1
+            global dim_2 = 1
+            continue
+        end
+        while dim_2 <= 32
+            if (dim_0 * 32 * dim_1 * dim_2) > 1024
+                global dim_1 += 1
+                global dim_2 = 1
+                continue
+            end
+            global wgs = (dim_0 * 32, dim_1, dim_2)
+            try
+                res = @btimed begin
+                    Trixi.exp_parnodes_calc_surface_integral!(du_exp, u, mesh, equations, solver.surface_integral, solver, cache,wgs)
+                    CUDA.synchronize()
+                end
+                if res.time < best_time
+                    global best_time = res.time
+                    global best_wgs = wgs
+                end
+                global dim_2 += 1
+            catch
+                global dim_2 += 1
+            end
+        end
+        global dim_1 += 1
+        global dim_2 = 1
+    end
+    global dim_0 += 1
+    global dim_1 = 1
+    global dim_2 = 1
+end
+println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
+
+finalize(mesh)

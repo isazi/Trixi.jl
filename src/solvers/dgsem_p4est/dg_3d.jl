@@ -794,11 +794,25 @@ function calc_surface_integral!(du, u,
                                 mesh::Union{P4estMesh{3}, T8codeMesh{3}},
                                 equations,
                                 surface_integral::SurfaceIntegralWeakForm,
-                                dg::DGSEM, cache)
+                                dg::DGSEM, cache, default_wgs = 32)
     backend = backend_or_nothing(cache.elements)
-    _calc_surface_integral!(backend, du, u, mesh, equations, surface_integral, dg, cache)
+    _calc_surface_integral!(backend, du, u, mesh, equations, surface_integral, dg, cache, default_wgs)
 
 end
+
+# Experiments
+
+function exp_parnodes_calc_surface_integral!(du, u,
+                                mesh::Union{P4estMesh{3}, T8codeMesh{3}},
+                                equations,
+                                surface_integral::SurfaceIntegralWeakForm,
+                                dg::DGSEM, cache, default_wgs = (32, 1, 1))
+    backend = backend_or_nothing(cache.elements)
+    _exp_parnodes_calc_surface_integral!(backend, du, u, mesh, equations, surface_integral, dg, cache, default_wgs)
+
+end
+
+# /Experiments
 
 @inline function _calc_surface_integral!(backend::Nothing, du, u,
                                          mesh::Union{P4estMesh{3}, T8codeMesh{3}},
