@@ -281,7 +281,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
@@ -314,7 +314,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
@@ -347,7 +347,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
@@ -380,7 +380,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
@@ -413,7 +413,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
@@ -446,7 +446,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
@@ -479,7 +479,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
@@ -512,7 +512,7 @@ index_x = 1
 index_y = 1
 while index_x * 32 <= 1024
       while index_y <= 32
-            if index_x * index_y > 1024
+            if index_x * 32 * index_y > 1024
                   global index_x += 1
                   global index_y = 1
                   continue
