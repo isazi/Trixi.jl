@@ -16,6 +16,54 @@ function error_statistics(reference, actual)
       println("\tMedian error: ", Statistics.median(diff))
 end
 
+function tune_1d(name, benchmark_func; ref_time=nothing)
+    println("Tuning $name")
+    best_time = Inf
+    best_wgs = 0
+    for wgs in 32:32:1024
+        try
+            t = benchmark_func(wgs)
+            if t < best_time
+                best_time = t
+                best_wgs = wgs
+            end
+        catch
+        end
+    end
+    print("\tBest time: $best_time s")
+    if !isnothing(ref_time)
+        print(" -- speedup: $(ref_time / best_time)")
+    end
+    println(" -- workgroupsize: $best_wgs")
+    return best_time
+end
+
+function tune_2d(name, benchmark_func, ref_time=nothing)
+    println("Tuning $name")
+    best_time = Inf
+    best_wgs = (0, 0)
+    for wgs_y in 1:32
+        max_x = 1024 ÷ wgs_y
+        for wgs_x in 32:32:max_x
+            wgs = (wgs_x, wgs_y)
+            try
+                t = benchmark_func(wgs)
+                if t < best_time
+                    best_time = t
+                    best_wgs = wgs
+                end
+            catch
+            end
+        end
+    end    
+    print("\tBest time: $best_time s")
+    if !isnothing(ref_time)
+        print(" -- speedup: $(ref_time / best_time)")
+    end
+    println(" -- workgroupsize: $best_wgs")
+    return best_time
+end
+
 ###############################################################################
 # semidiscretization of the compressible Euler equations
 
@@ -202,339 +250,51 @@ end
 
 # Tuning
 println()
-println("Tuning reference")
-reference_time = Inf
-best_time = Inf
-wgs = 0
-best_wgs = wgs
-index_x = 1
-while index_x * 32 <= 1024
-      global wgs = index_x * 32
-      try
-            res = @btimed begin
-                  Trixi.calc_volume_integral!(du_ref, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                  CUDA.synchronize()
-            end
-            if res.time < best_time
-                  global best_time = res.time
-                  global best_wgs = wgs
-            end
-            global index_x += 1
-      catch
-            global index_x += 1
-      end
-end
-reference_time = best_time
-println("\tBest time: ", best_time, " s -- workgroupsize: ", best_wgs)
 
-println("Tuning exp_index")
-best_time = Inf
-wgs = 0
-best_wgs = wgs
-index_x = 1
-while index_x * 32 <= 1024
-      global wgs = index_x * 32
-      try
-            res = @btimed begin
-                  Trixi.exp_index_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                  CUDA.synchronize()
-            end
-            if res.time < best_time
-                  global best_time = res.time
-                  global best_wgs = wgs
-            end
-            global index_x += 1
-      catch
-            global index_x += 1
-      end
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
+kernels_1d = [
+    ("exp_index",                     Trixi.exp_index_calc_volume_integral!),
+    ("exp_split",                     Trixi.exp_split_calc_volume_integral!)
+]
+kernels_2d = [
+    ("exp_ijk",                       Trixi.exp_ijk_calc_volume_integral!),
+    ("exp_ijk_fusedloop",             Trixi.exp_ijk_fusedloop_calc_volume_integral!),
+    ("exp_ijk_incloop",               Trixi.exp_ijk_incloop_calc_volume_integral!),
+    ("exp_ijk_split",                 Trixi.exp_ijk_split_calc_volume_integral!),
+    ("exp_ijk_nosym",                 Trixi.exp_ijk_nosym_calc_volume_integral!),
+    ("exp_ijk_nosym_split",           Trixi.exp_ijk_nosym_split_calc_volume_integral!),
+    ("exp_ijk_nosym_fusedloop",       Trixi.exp_ijk_nosym_fusedloop_calc_volume_integral!),
+    ("exp_ijk_nosym_fusedloop_inter", Trixi.exp_ijk_nosym_fusedloop_inter_calc_volume_integral!)
+]
 
-println("Tuning exp_split")
-best_time = Inf
-wgs = 0
-best_wgs = wgs
-index_x = 1
-while index_x * 32 <= 1024
-      global wgs = index_x * 32
-      try
-            res = @btimed begin
-                  Trixi.exp_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                  CUDA.synchronize()
-            end
-            if res.time < best_time
-                  global best_time = res.time
-                  global best_wgs = wgs
-            end
-            global index_x += 1
-      catch
-            global index_x += 1
-      end
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
+reference_time = tune_1d("reference", wgs -> begin
+    @belapsed begin 
+        Trixi.calc_volume_integral!($du_ref, $u, $mesh, Trixi.False(), 
+                                    $equations, $solver.volume_integral, 
+                                    $solver, $cache, $wgs)
+        CUDA.synchronize()
+    end samples=3 seconds=0.5
+end)
 
-println("Tuning exp_ijk")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
+for (name, func) in kernels_1d
+    tune_1d(name, wgs -> begin
+        @belapsed begin 
+            $func($du_exp, $u, $mesh, Trixi.False(), 
+                  $equations, $solver.volume_integral, 
+                  $solver, $cache, $wgs)
+            CUDA.synchronize()
+        end samples=3 seconds=0.5
+    end, reference_time)
 end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
 
-println("Tuning exp_ijk_fusedloop")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_fusedloop_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
+for (name, func) in kernels_2d
+    tune_2d(name, wgs -> begin
+        @belapsed begin 
+            $func($du_exp, $u, $mesh, Trixi.False(), 
+                  $equations, $solver.volume_integral, 
+                  $solver, $cache, $wgs)
+            CUDA.synchronize()
+        end samples=3 seconds=0.5
+    end, reference_time)
 end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
-
-println("Tuning exp_ijk_incloop")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_incloop_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
-
-println("Tuning exp_ijk_split")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
-
-println("Tuning exp_ijk_nosym")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_nosym_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
-
-println("Tuning exp_ijk_nosym_split")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_nosym_split_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
-
-println("Tuning exp_ijk_nosym_fusedloop")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_nosym_fusedloop_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
-
-println("Tuning exp_ijk_nosym_fusedloop_inter")
-best_time = Inf
-wgs = (0, 0)
-best_wgs = wgs
-index_x = 1
-index_y = 1
-while index_x * 32 <= 1024
-      while index_y <= 32
-            if index_x * 32 * index_y > 1024
-                  global index_x += 1
-                  global index_y = 1
-                  continue
-            end
-            global wgs = (index_x * 32, index_y)
-            try
-                  res = @btimed begin
-                        Trixi.exp_ijk_nosym_fusedloop_inter_calc_volume_integral!(du_exp, u, mesh, Trixi.False(), equations, solver.volume_integral, solver, cache, wgs)
-                        CUDA.synchronize()
-                  end
-                  if res.time < best_time
-                        global best_time = res.time
-                        global best_wgs = wgs
-                  end
-                  global index_y += 1
-            catch
-                  global index_y += 1
-            end
-      end
-      global index_x += 1
-      global index_y = 1
-end
-println("\tBest time: ", best_time, " s -- speedup: ", reference_time / best_time, " -- workgroupsize: ", best_wgs)
 
 finalize(mesh)
