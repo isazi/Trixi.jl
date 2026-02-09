@@ -282,8 +282,8 @@ for (name, func) in kernels_1d
                   $equations, $solver.volume_integral, 
                   $solver, $cache, $wgs)
             CUDA.synchronize()
-        end samples=3 seconds=0.5
-    end, reference_time)
+        end samples=10 seconds=5.0
+    end, ref_time=reference_time)
 end
 
 for (name, func) in kernels_2d
@@ -293,7 +293,7 @@ for (name, func) in kernels_2d
                   $equations, $solver.volume_integral, 
                   $solver, $cache, $wgs)
             CUDA.synchronize()
-        end samples=3 seconds=0.5
+        end samples=10 seconds=5.0
     end, reference_time)
 end
 
