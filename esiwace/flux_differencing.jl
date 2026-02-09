@@ -272,7 +272,7 @@ reference_time = tune_1d("reference", wgs -> begin
                                     $equations, $solver.volume_integral, 
                                     $solver, $cache, $wgs)
         CUDA.synchronize()
-    end samples=3 seconds=0.5
+    end samples=10 seconds=5.0
 end)
 
 for (name, func) in kernels_1d
