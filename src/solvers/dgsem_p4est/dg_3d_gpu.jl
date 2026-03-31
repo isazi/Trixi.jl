@@ -408,7 +408,7 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -418,8 +418,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -500,7 +500,7 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -510,8 +510,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -589,7 +589,7 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -599,8 +599,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -718,15 +718,15 @@ end
 
     kernel_x!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     kernel_y!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     kernel_z!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -736,8 +736,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -776,8 +776,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -816,8 +816,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -864,7 +864,7 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -874,8 +874,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -952,15 +952,15 @@ end
 
     kernel_x!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     kernel_y!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     kernel_z!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -970,8 +970,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -1008,8 +1008,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -1046,8 +1046,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -1092,7 +1092,7 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -1102,8 +1102,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
@@ -1164,7 +1164,7 @@ end
 
     kernel!(du, u, equations, volume_integral.volume_flux, num_nodes, derivative_split,
             contravariant_vectors,
-            ndrange = (num_nodes^3, nelements(dg, cache)),
+            ndrange = (nelements(dg, cache), num_nodes * num_nodes * num_nodes),
             workgroupsize = default_wgs)
     return nothing
 end
@@ -1174,8 +1174,8 @@ end
                                                 contravariant_vectors, alpha = true)
     # true * [some floating point value] == [exactly the same floating point value]
     # This can (hopefully) be optimized away due to constant propagation.
-    linear_grid = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1] - 1
-    element = ((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]
+    element = ((@index(Group, NTuple)[1] - 1) * @groupsize()[1]) + @index(Local, NTuple)[1]
+    linear_grid = (((@index(Group, NTuple)[2] - 1) * @groupsize()[2]) + @index(Local, NTuple)[2]) - 1
     i = floor(Int, linear_grid / num_nodes^2) + 1
     j = floor(Int, (linear_grid % num_nodes^2) / num_nodes) + 1
     k = (linear_grid % num_nodes) + 1
